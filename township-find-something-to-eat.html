@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Township Find Something to Eat</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: role switch bar on top; customer app inside a phone frame beside a "try this" guide; owner and admin as web dashboards with a side nav. Kasi signage: deep green + mustard. */
+:root{
+  --bg:#EEF1EC; --surface:#FFFFFF; --surface-2:#F5F7F3; --ink:#18211C; --muted:#5B6860; --line:#D9DFD8;
+  --brand:#0D6A4C; --brand-soft:#DCEEE5; --accent:#E9A514; --accent-soft:#FBEFCC; --on-accent:#1B1406;
+  --ok:#1E7F4E; --warn:#A86A00; --bad:#B53A26; --bad-soft:#F7E1DC;
+  --frame:#18211C;
+  --f-display:"Bricolage Grotesque", "Arial Black", system-ui, sans-serif;
+  --f-body:"Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono:"IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --r:14px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0F1411; --surface:#182019; --surface-2:#1F2921; --ink:#E9EFEA; --muted:#97A59C; --line:#2B362E;
+  --brand:#45C18F; --brand-soft:#173527; --accent:#F2B53A; --accent-soft:#3A2E10; --on-accent:#1B1406;
+  --ok:#4FCB8A; --warn:#E6AE45; --bad:#EE7A63; --bad-soft:#3B1F19; --frame:#000; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F1411; --surface:#182019; --surface-2:#1F2921; --ink:#E9EFEA; --muted:#97A59C; --line:#2B362E;
+  --brand:#45C18F; --brand-soft:#173527; --accent:#F2B53A; --accent-soft:#3A2E10; --on-accent:#1B1406;
+  --ok:#4FCB8A; --warn:#E6AE45; --bad:#EE7A63; --bad-soft:#3B1F19; --frame:#000; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 40px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.1}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+.wrap{max-width:1180px;margin:0 auto}
+
+/* top bar */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:14px 12px;display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);margin-bottom:22px}
+.brandmark{display:flex;align-items:center;gap:10px}
+.logo{width:38px;height:38px;border-radius:10px;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;font-family:var(--f-display);font-weight:800;font-size:15px;letter-spacing:-.5px;transform:rotate(-4deg)}
+.brandmark b{font-family:var(--f-display);font-weight:800;font-size:18px;display:block;line-height:1}
+.brandmark small{font-size:12px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.seg{display:flex;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:4px;gap:2px;overflow-x:auto;max-width:100%}
+.seg button{border:0;background:none;padding:8px 14px;border-radius:999px;font-weight:600;font-size:14px;white-space:nowrap;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.badge-demo{font-size:12px;font-weight:600;color:var(--muted);border:1px dashed var(--line);padding:4px 10px;border-radius:999px}
+
+/* customer layout */
+.cust{display:grid;grid-template-columns:auto minmax(0,1fr);gap:40px;align-items:start}
+.phone{width:390px;height:min(820px,calc(100dvh - 130px));min-height:620px;border:11px solid var(--frame);border-radius:44px;background:var(--bg);position:relative;overflow:hidden;box-shadow:0 30px 60px -30px rgba(0,0,0,.45);display:flex;flex-direction:column}
+.screen{position:relative;flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;padding-bottom:24px;scroll-behavior:smooth}
+.guide{max-width:520px;padding-top:10px}
+.guide h1{font-size:clamp(30px,4vw,46px);font-weight:800;letter-spacing:-1px}
+.guide h1 em{font-style:normal;background:var(--accent);color:var(--on-accent);padding:0 .15em;border-radius:6px}
+.guide p{color:var(--muted);max-width:60ch}
+.tries{display:grid;gap:8px;margin:20px 0 26px}
+.try{display:flex;gap:12px;align-items:center;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.try:hover{border-color:var(--brand)}
+.try .k{font-family:var(--f-mono);font-size:12px;color:var(--brand);min-width:62px}
+.try span:last-child{font-weight:600}
+.principle{border-left:4px solid var(--accent);padding:4px 0 4px 14px;font-family:var(--f-display);font-weight:600;font-size:18px}
+
+@media (max-width:820px){
+  .cust{grid-template-columns:minmax(0,1fr)}
+  .phone{width:100%;max-width:430px;margin:0 auto;height:78dvh;min-height:560px;border-width:8px;border-radius:32px}
+  .guide{order:2}
+}
+
+/* in-app */
+.appbar{position:sticky;top:0;z-index:3;background:var(--bg);padding:14px 16px 10px;display:flex;align-items:center;gap:10px}
+.iconbtn{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center;flex:none}
+.loc{display:flex;align-items:center;gap:8px;border:0;background:none;padding:0;text-align:left}
+.loc small{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.loc b{font-size:16px}
+.pad{padding:0 16px}
+.hello{font-family:var(--f-display);font-weight:800;font-size:28px;letter-spacing:-.6px;margin:6px 0 14px;line-height:1.05}
+.hello span{color:var(--brand)}
+.search{display:flex;gap:8px;background:var(--surface);border:1.5px solid var(--ink);border-radius:14px;padding:4px 4px 4px 14px;align-items:center}
+.search input{flex:1;border:0;background:none;outline:none;padding:10px 0;min-width:0}
+.search button{border:0;background:var(--accent);color:var(--on-accent);font-weight:700;border-radius:10px;padding:9px 14px}
+.hint{font-size:12px;color:var(--muted);margin:8px 2px 0}
+.hint button{border:0;background:none;color:var(--brand);font-weight:600;padding:0;font-size:12px;text-decoration:underline}
+.sect{margin:24px 0 10px;display:flex;justify-content:space-between;align-items:baseline}
+.sect h3{font-size:18px}
+.sect small{color:var(--muted);font-size:12px}
+.cats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.cat{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:12px 6px;display:grid;justify-items:center;gap:4px;font-size:12.5px;font-weight:600;text-align:center}
+.cat .e{font-size:24px;line-height:1}
+.cat:hover{border-color:var(--brand)}
+.feat{display:flex;gap:10px;overflow-x:auto;padding:0 16px 4px;scroll-snap-type:x mandatory}
+.featcard{flex:0 0 78%;scroll-snap-align:start;border-radius:16px;overflow:hidden;background:var(--surface);border:1px solid var(--line);text-align:left;padding:0}
+.featcard .ph{height:110px}
+.featcard .bd{padding:10px 12px 12px}
+.ribbon{display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;background:var(--accent);color:var(--on-accent);padding:3px 8px;border-radius:6px}
+.ph{position:relative;color:#fff;display:flex;align-items:flex-end;padding:10px;font-family:var(--f-display);font-weight:800;font-size:22px;letter-spacing:-.5px;overflow:hidden}
+.ph::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(-35deg,rgba(255,255,255,.07) 0 10px,transparent 10px 22px)}
+.ph span{position:relative;z-index:1;text-shadow:0 1px 8px rgba(0,0,0,.25)}
+.list{display:grid;gap:10px}
+.item{display:grid;grid-template-columns:72px minmax(0,1fr);gap:12px;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px;width:100%}
+.item .ph{width:72px;height:72px;border-radius:10px;font-size:20px;justify-content:center;align-items:center;padding:0}
+.item h4{margin:0;font-size:15.5px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.meta{font-size:12.5px;color:var(--muted);display:flex;gap:6px;flex-wrap:wrap;margin-top:2px}
+.pills{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
+.pill{font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.pill.open{background:var(--brand-soft);color:var(--ok);border-color:transparent}
+.pill.closed{background:var(--bad-soft);color:var(--bad);border-color:transparent}
+.pill.spon{background:var(--accent-soft);color:var(--warn);border-color:transparent}
+.tick{display:inline-grid;place-items:center;width:16px;height:16px;border-radius:50%;background:var(--brand);color:var(--bg);font-size:10px;font-weight:800}
+.star{color:var(--accent)}
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 12px;font-size:13px;font-weight:600;white-space:nowrap}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.understood{font-size:12.5px;color:var(--muted);margin:10px 0}
+.understood b{color:var(--ink);background:var(--accent-soft);padding:1px 6px;border-radius:5px}
+.empty{text-align:center;padding:30px 10px;color:var(--muted)}
+.empty b{display:block;color:var(--ink);font-family:var(--f-display);font-size:18px;margin-bottom:6px}
+
+/* profile */
+.hero{height:190px;font-size:30px;padding:16px}
+.prof{padding:14px 16px 0}
+.prof h2{font-size:26px;font-weight:800;letter-spacing:-.5px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.actions{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0}
+.act{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:10px 4px;font-weight:700;font-size:13px;display:grid;justify-items:center;gap:3px}
+.act.wa{background:var(--brand);color:var(--bg);border-color:var(--brand)}
+.act svg{width:20px;height:20px}
+.tabs{display:flex;border-bottom:1px solid var(--line);gap:4px;position:sticky;top:0;background:var(--bg);z-index:2}
+.tabs button{flex:1;border:0;background:none;padding:12px 0;font-weight:600;color:var(--muted);border-bottom:3px solid transparent}
+.tabs button[aria-selected="true"]{color:var(--ink);border-color:var(--accent)}
+.menu{display:grid}
+.mrow{display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px dashed var(--line)}
+.mrow b{font-weight:600}
+.kv{display:grid;grid-template-columns:110px minmax(0,1fr);gap:8px 12px;font-size:14px;padding:14px 0;border-bottom:1px solid var(--line)}
+.kv dt{color:var(--muted)}
+.kv dd{margin:0}
+.map{border-radius:12px;overflow:hidden;border:1px solid var(--line);margin-top:14px}
+.map svg{display:block;width:100%;height:auto}
+.linkbtn{border:0;background:none;color:var(--bad);font-weight:600;padding:14px 0;font-size:13px}
+.review{padding:12px 0;border-bottom:1px solid var(--line)}
+.review .who{display:flex;justify-content:space-between;font-size:13px}
+.reply{margin-top:8px;padding:8px 10px;border-radius:10px;background:var(--surface-2);font-size:13px}
+.reply b{display:block;font-size:12px;color:var(--brand)}
+.stars-in{display:flex;gap:4px}
+.stars-in button{border:0;background:none;font-size:26px;padding:0;color:var(--line);line-height:1}
+.stars-in button.on{color:var(--accent)}
+textarea,input[type=text],input[type=tel],input[type=number],select{width:100%;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:10px 12px}
+textarea{min-height:70px;resize:vertical}
+.btn{border:0;background:var(--ink);color:var(--bg);font-weight:700;border-radius:10px;padding:10px 16px}
+.btn.acc{background:var(--accent);color:var(--on-accent)}
+.btn.brand{background:var(--brand);color:var(--bg)}
+.btn.ghost{background:var(--surface);color:var(--ink);border:1px solid var(--line)}
+.btn.bad{background:var(--bad);color:var(--bg)}
+.btn.sm{padding:6px 11px;font-size:13px;border-radius:8px}
+
+/* sheet */
+.scrim{position:absolute;inset:0;background:rgba(0,0,0,.4);z-index:8}
+.sheet{position:absolute;left:0;right:0;bottom:0;z-index:9;background:var(--surface);border-radius:20px 20px 0 0;padding:18px 18px 26px;display:grid;gap:12px}
+.sheet h3{font-size:20px}
+.bignum{font-family:var(--f-mono);font-size:24px;user-select:all;background:var(--surface-2);border-radius:10px;padding:10px 12px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.radio{display:flex;gap:10px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:10px}
+
+/* dashboards */
+.dash{display:grid;grid-template-columns:220px minmax(0,1fr);gap:28px;align-items:start}
+.side{position:sticky;top:90px;display:grid;gap:4px}
+.side .who{padding:12px;border-radius:12px;background:var(--surface);border:1px solid var(--line);margin-bottom:10px}
+.side .who b{display:block;font-family:var(--f-display);font-size:16px}
+.side button{border:0;background:none;text-align:left;padding:9px 12px;border-radius:10px;font-weight:600;color:var(--muted);display:flex;justify-content:space-between;align-items:center}
+.side button[aria-current="true"]{background:var(--surface);color:var(--ink);box-shadow:inset 3px 0 0 var(--accent)}
+.count{font-family:var(--f-mono);font-size:12px;background:var(--accent);color:var(--on-accent);border-radius:999px;padding:1px 7px}
+.main h2{font-size:28px;font-weight:800;letter-spacing:-.5px;margin-bottom:4px}
+.main > p{color:var(--muted);margin:0 0 20px;max-width:65ch}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px}
+.panel h3{font-size:17px;margin-bottom:12px}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:16px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px}
+.stat small{display:block;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.stat b{font-family:var(--f-display);font-size:30px;font-weight:800;font-variant-numeric:tabular-nums}
+.stat em{font-style:normal;font-size:12px;color:var(--ok);font-weight:600}
+.form{display:grid;gap:14px}
+.field{display:grid;gap:5px}
+.field label,.lbl{font-size:13px;font-weight:600}
+.field .help{font-size:12px;color:var(--muted)}
+.checks{display:flex;flex-wrap:wrap;gap:6px}
+.checks label{display:flex;gap:6px;align-items:center;border:1px solid var(--line);border-radius:999px;padding:5px 11px;font-size:13px;font-weight:500;background:var(--surface)}
+.checks input{accent-color:var(--brand)}
+.switch{display:flex;gap:10px;align-items:center;font-weight:600}
+.switch input{width:18px;height:18px;accent-color:var(--brand)}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--surface)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:middle;white-space:nowrap}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;background:var(--surface-2)}
+tr:last-child td{border-bottom:0}
+.status{font-size:12px;font-weight:700;padding:3px 9px;border-radius:999px;display:inline-block}
+.s-live{background:var(--brand-soft);color:var(--ok)}
+.s-pending{background:var(--accent-soft);color:var(--warn)}
+.s-suspended,.s-rejected{background:var(--bad-soft);color:var(--bad)}
+.queue{display:grid;gap:14px}
+.qcard{display:grid;grid-template-columns:minmax(0,1fr) 250px;gap:18px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px}
+.qcard.risk{box-shadow:inset 4px 0 0 var(--bad)}
+.vlist{display:grid;gap:6px;font-size:13.5px}
+.vlist div{display:flex;gap:8px;align-items:center}
+.ok{color:var(--ok);font-weight:800}.no{color:var(--bad);font-weight:800}
+.note{font-size:13px;background:var(--bad-soft);color:var(--bad);padding:8px 10px;border-radius:8px;margin-top:10px}
+.plans{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.plan{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;display:grid;gap:10px;align-content:start}
+.plan.cur{border-color:var(--brand)}
+.plan .price{font-family:var(--f-display);font-size:28px;font-weight:800}
+.plan ul{margin:0;padding-left:18px;font-size:14px;color:var(--muted)}
+.menuedit{display:grid;gap:8px}
+.menuedit .r{display:grid;grid-template-columns:minmax(0,1fr) 110px auto;gap:8px}
+.bars text{fill:var(--muted);font-size:11px;font-family:var(--f-body)}
+.taglist{display:flex;flex-wrap:wrap;gap:6px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:12px 16px;border-radius:12px;font-weight:600;z-index:20;display:flex;gap:12px;align-items:center;max-width:calc(100% - 32px);box-shadow:0 10px 30px rgba(0,0,0,.25)}
+.toast button{border:0;background:var(--accent);color:var(--on-accent);font-weight:700;border-radius:8px;padding:5px 10px}
+
+/* production chrome */
+.statusbar{flex:none;display:flex;justify-content:space-between;align-items:center;padding:10px 26px 4px;font-size:14px;font-weight:700;background:var(--bg)}
+.statusbar svg{height:12px;width:auto}
+.tabbar{flex:none;display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--line);background:var(--surface);padding:6px 4px 12px}
+.tabbar button{border:0;background:none;display:grid;justify-items:center;gap:2px;font-size:11px;font-weight:600;color:var(--muted);padding:4px 0}
+.tabbar button svg{width:22px;height:22px}
+.tabbar button[aria-current="true"]{color:var(--brand)}
+.ic{width:20px;height:20px;flex:none}
+.ph .art{position:absolute;z-index:1;filter:drop-shadow(0 6px 8px rgba(0,0,0,.18))}
+.item .ph .art{inset:8%;width:84%;height:84%}
+.featcard .ph .art,.hero .art{right:6%;bottom:-6%;height:118%;width:auto}
+.hero .art{height:112%;bottom:-8%}
+.ph.sm{width:34px;height:34px;border-radius:8px;padding:0;flex:none}
+.ph.sm .art{inset:6%;width:88%;height:88%}
+.ph.thumb{width:112px;height:84px;border-radius:12px;padding:0}
+.ph.thumb .art{inset:8%;width:84%;height:84%}
+.cat{padding:12px 6px 10px;gap:6px}
+.cat .ci{width:46px;height:46px;border-radius:50%;display:grid;place-items:center}
+.cat .ci svg{width:40px;height:40px}
+.heart{position:absolute;top:14px;right:14px;z-index:2}
+.heart[aria-pressed="true"] svg{fill:var(--bad);stroke:var(--bad)}
+.avatar{width:36px;height:36px;border-radius:50%;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;font-weight:800;font-size:13px;flex:none;border:0}
+.avatar.lg{width:64px;height:64px;font-size:22px}
+.rows{display:grid;background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.rows button{display:flex;align-items:center;gap:12px;border:0;border-bottom:1px solid var(--line);background:none;padding:14px;text-align:left;font-weight:600}
+.rows button:last-child{border-bottom:0}
+.rows button span.r{margin-left:auto;color:var(--muted);font-weight:500;font-size:13px}
+.side button .l{display:flex;gap:10px;align-items:center}
+.side button svg{width:18px;height:18px}
+.dbar{display:flex;align-items:center;gap:12px;justify-content:space-between;margin-bottom:22px;padding:10px 14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+.dbar .crumb{font-size:13px;color:var(--muted)}
+.dbar .crumb b{color:var(--ink)}
+.dsearch{display:flex;align-items:center;gap:8px;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:0 10px;flex:1;max-width:320px}
+.dsearch input{border:0;background:none;padding:8px 0;outline:none;min-width:0;width:100%}
+.bell{position:relative}
+.bell::after{content:"";position:absolute;top:7px;right:8px;width:8px;height:8px;border-radius:50%;background:var(--bad);border:2px solid var(--surface)}
+.namecell{display:flex;align-items:center;gap:10px}
+.meter{height:8px;border-radius:99px;background:var(--surface-2);overflow:hidden;border:1px solid var(--line)}
+.meter i{display:block;height:100%;background:var(--brand);border-radius:99px}
+.todo{display:grid;gap:8px;margin-top:12px;font-size:14px}
+.todo div{display:flex;gap:8px;align-items:center}
+.foot{margin-top:36px;padding-top:16px;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.emptyart{width:72px;height:72px;margin:0 auto 10px;border-radius:50%;background:var(--surface-2);display:grid;place-items:center;color:var(--muted)}
+.emptyart svg{width:32px;height:32px}
+@media (max-width:820px){.statusbar{display:none}}
+
+@media (max-width:860px){
+  .dbar .crumb{display:none}
+  .dash{grid-template-columns:minmax(0,1fr)}
+  .side{position:static;display:flex;overflow-x:auto;gap:4px}
+  .side .who{display:none}
+  .side button{white-space:nowrap;gap:8px}
+  .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .grid2,.plans{grid-template-columns:minmax(0,1fr)}
+  .qcard{grid-template-columns:minmax(0,1fr)}
+}
+@media (prefers-reduced-motion:reduce){.screen{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<header class="top wrap">
+  <div class="brandmark">
+    <div class="logo">FS</div>
+    <div><b>Find Something to Eat</b><small>Township · local food, found</small></div>
+  </div>
+  <nav class="seg" aria-label="View as">
+    <button data-act="role" data-role="customer" aria-pressed="true">Customer app</button>
+    <button data-act="role" data-role="owner" aria-pressed="false">Business owner</button>
+    <button data-act="role" data-role="admin" aria-pressed="false">Admin</button>
+  </nav>
+</header>
+
+<main class="wrap" id="root"></main>
+<footer class="wrap foot"><span>© 2026 Township Find Something to Eat</span><span>Prototype: businesses, phone numbers, prices and statistics are sample data.</span></footer>
+<div id="toast" class="toast" hidden></div>
+
+<script>
+/* ---------------- data ---------------- */
+const D = {
+  townships: {
+    "Soweto": ["Orlando","Mofolo","Pimville","Diepkloof","Meadowlands"],
+    "Mohlakeng": ["Ext 1","Ext 4","Ext 7"],
+    "Lenasia": ["Ext 1","Ext 9","Lenasia South"],
+    "Mamelodi": ["Mamelodi East","Mamelodi West","Nellmapius"]
+  },
+  cats: [
+    {id:"trad",label:"Traditional food",e:"🍲",kw:["traditional","pap","mogodu","umngqusho","samp","african","kasi food","seven colours","7 colours"]},
+    {id:"kota",label:"Kota",e:"🍞",kw:["kota","kotas","quarter","spatlo","sphatlho"]},
+    {id:"braai",label:"Braai",e:"🥩",kw:["braai","shisa","chisa","nyama","meat","grill","wors"]},
+    {id:"cakes",label:"Cakes & Baking",e:"🎂",kw:["cake","bak","scone","birthday"]},
+    {id:"catering",label:"Catering",e:"🍽",kw:["cater","event","function","wedding","funeral","party"]},
+    {id:"coffee",label:"Coffee",e:"☕",kw:["coffee","cappuccino","latte","café","cafe"]},
+    {id:"desserts",label:"Desserts",e:"🍰",kw:["dessert","malva","ice cream","sweet","pudding"]},
+    {id:"chicken",label:"Chicken",e:"🍗",kw:["chicken","wings","dust"]},
+    {id:"street",label:"Street food",e:"🌭",kw:["street","magwinya","amagwinya","vetkoek","fat cake","skopo","walkie"]}
+  ],
+  biz: [],
+  reports: [],
+  promos: [],
+  searches: ["kota mofolo","cakes in mohlakeng","catering near me","traditional food soweto","braai in lenasia","coffee orlando"],
+  nextId: 100
+};
+const W = (o,c,sun)=>({wk:o,sat:c,sun});
+function B(o){ return Object.assign({status:"live",verified:true,featured:null,services:["Takeaway"],delivery:false,delAreas:[],also:[],social:{},reviews:[],views:0,docs:{reg:true,id:true,phone:true,pin:true,photos:true},regNo:"",tagline:""},o); }
+D.biz = [
+ B({id:1,name:"Mama Thandi's Kitchen",township:"Soweto",area:"Orlando",cats:["trad","catering"],hue:18,tagline:"Sunday-style plates every day of the week.",
+   phone:"071 482 3390",wa:"27714823390",hours:W([8,19],[8,19],[9,16]),services:["Takeaway","Sit-down","Catering","Events"],delivery:true,delAreas:["Orlando","Mofolo","Diepkloof"],
+   social:{fb:"MamaThandisKitchen",ig:"@mamathandis.kitchen",tt:"@mamathandi"},featured:"week",regNo:"2021/448120/07",
+   menu:[{n:"Pap & mogodu",p:65},{n:"Umngqusho with beef stew",p:70},{n:"Sunday 7 colours plate",p:95},{n:"Chakalaka & pap",p:35},{n:"Catering, per head (min 30)",p:120}],
+   rating:4.7,n:86,views:412,
+   reviews:[{who:"Lerato M.",stars:5,text:"Mogodu tastes like my granny's. Portions are big.",date:"12 Oct",reply:"Thank you Lerato! See you Sunday."},
+            {who:"Sipho N.",stars:4,text:"Catered my son's graduation for 60 people. On time and hot.",date:"28 Sep"}]}),
+ B({id:2,name:"Kasi Kota King",township:"Soweto",area:"Mofolo",cats:["kota","street"],hue:42,tagline:"Kotas built properly. Chips always fresh.",
+   phone:"072 105 7781",wa:"27721057781",hours:W([10,22],[10,23],[11,21]),delivery:true,delAreas:["Mofolo","Orlando","Meadowlands"],also:["Uber Eats"],
+   social:{ig:"@kasikotaking",tt:"@kotaking.sowet"},menu:[{n:"Quarter basic (chips, atchar, polony)",p:25},{n:"Russian & cheese kota",p:38},{n:"Full house kota",p:55},{n:"Double full house",p:85}],
+   rating:4.5,n:143,reviews:[{who:"Thabo K.",stars:5,text:"Full house is enough for two. Best in Mofolo.",date:"18 Oct"}]}),
+ B({id:3,name:"Pimville Shisa Corner",township:"Soweto",area:"Pimville",cats:["braai"],hue:4,tagline:"Pick your meat, we braai it. Pap and salads on the side.",
+   phone:"083 660 2214",wa:"27836602214",hours:W([11,20],[10,23],[10,21]),services:["Takeaway","Sit-down","Events"],
+   social:{fb:"PimvilleShisaCorner"},menu:[{n:"Wors, per 500g",p:60},{n:"Chuck & pap platter",p:110},{n:"Chicken quarter & pap",p:55},{n:"Chakalaka (500ml)",p:30}],
+   rating:4.4,n:61,reviews:[{who:"Nomsa D.",stars:4,text:"Saturday vibes are great. Wait time can be long after 2pm.",date:"5 Oct"}]}),
+ B({id:4,name:"Diepkloof Daily Grind",township:"Soweto",area:"Diepkloof",cats:["coffee","desserts"],hue:28,tagline:"Coffee, vetkoek and a quiet table to work.",
+   phone:"065 220 9015",wa:"27652209015",hours:W([6.5,17],[7,15],null),services:["Takeaway","Sit-down","Wi-Fi"],
+   social:{ig:"@dailygrind.diepkloof"},menu:[{n:"Flat white",p:32},{n:"Cappuccino",p:30},{n:"Vetkoek & mince",p:28},{n:"Malva pudding slice",p:35}],
+   rating:4.6,n:38,reviews:[]}),
+ B({id:5,name:"Sweet Lebo Cakes",township:"Mohlakeng",area:"Ext 4",cats:["cakes","desserts"],hue:330,tagline:"Custom birthday, wedding and baby shower cakes from home.",
+   phone:"074 913 5520",wa:"27749135520",hours:W([8,18],[8,14],null),services:["Custom orders","Collection"],delivery:true,delAreas:["Ext 1","Ext 4","Ext 7","Randfontein"],
+   social:{fb:"SweetLeboCakes",ig:"@sweetlebocakes"},featured:"featured",
+   menu:[{n:"Birthday cake, 1 tier (serves 15)",p:450},{n:"Custom 2-tier celebration cake",p:1200},{n:"Cupcakes, box of 12",p:180},{n:"Scones, dozen",p:70}],
+   rating:4.9,n:52,reviews:[{who:"Zanele P.",stars:5,text:"Ordered a 2-tier for my daughter. Exactly like the picture.",date:"9 Oct",reply:"It was a pleasure, Zanele!"}]}),
+ B({id:6,name:"Mohlakeng Events Kitchen",township:"Mohlakeng",area:"Ext 7",cats:["catering","trad"],hue:150,tagline:"Weddings, funerals, unveilings and year-end functions.",
+   phone:"061 774 0032",wa:"27617740032",hours:W([8,17],[7,17],null),services:["Catering","Events","Hire of chafing dishes"],delivery:true,delAreas:["All of Mohlakeng","Randfontein","Toekomsrus"],
+   social:{fb:"MohlakengEventsKitchen"},menu:[{n:"Standard menu, per head",p:95},{n:"Wedding menu, per head",p:160},{n:"Samp & beans, 20L pot",p:650}],
+   rating:4.6,n:29,reviews:[]}),
+ B({id:7,name:"Ext 9 Braai Stop",township:"Lenasia",area:"Ext 9",cats:["braai","chicken"],hue:12,tagline:"Flame-grilled chicken and chops, open late on weekends.",
+   phone:"076 300 4418",wa:"27763004418",hours:W([12,21],[11,23],[11,20]),also:["Mr D"],delivery:true,delAreas:["Ext 9","Ext 10","Ext 13"],
+   menu:[{n:"Half chicken & pap",p:85},{n:"Lamb chops (3) & pap",p:120},{n:"Boerewors roll",p:40}],rating:4.3,n:47,reviews:[]}),
+ B({id:8,name:"Mamelodi Kota Hub",township:"Mamelodi",area:"Mamelodi East",cats:["kota"],hue:48,tagline:"Kotas, chips and cold drinks across from the taxi rank.",
+   phone:"079 551 6620",wa:"27795516620",hours:W([9,21],[9,22],[10,20]),also:["Mr D"],
+   menu:[{n:"Basic kota",p:22},{n:"Cheese & vienna kota",p:35},{n:"The Hub special",p:60}],rating:4.4,n:97,reviews:[{who:"Kagiso R.",stars:4,text:"Fast and cheap. Get the Hub special.",date:"14 Oct"}]}),
+ B({id:9,name:"Nellmapius Magwinya Spot",township:"Mamelodi",area:"Nellmapius",cats:["street","kota"],hue:36,tagline:"Fresh amagwinya from 5am. Mince, polony or plain.",
+   phone:"068 240 1175",wa:"27682401175",hours:W([5,13],[5,13],[6,12]),verified:false,
+   menu:[{n:"Plain magwinya",p:4},{n:"Magwinya & mince",p:15},{n:"Kota (quarter)",p:25}],rating:4.8,n:24,reviews:[]}),
+ B({id:10,name:"Orlando Chicken & Chips",township:"Soweto",area:"Orlando",cats:["chicken","street"],hue:22,tagline:"Crispy chicken, slap chips and dombolo on Fridays.",
+   phone:"060 418 2207",wa:"27604182207",hours:W([10,21],[10,22],[11,20]),also:["Mr D","Uber Eats"],delivery:true,delAreas:["Orlando East","Orlando West","Noordgesig"],
+   menu:[{n:"2 pc chicken & chips",p:45},{n:"6 wings & chips",p:55},{n:"Family bucket (12 pc)",p:220}],rating:4.2,n:118,reviews:[]}),
+ B({id:11,name:"Meadowlands Malva Bakery",township:"Soweto",area:"Meadowlands",cats:["cakes","desserts"],hue:345,tagline:"Malva, koeksisters and scones baked daily.",
+   phone:"073 902 4461",wa:"27739024461",hours:W([7,16],[7,14],null),
+   menu:[{n:"Malva pudding (family tray)",p:120},{n:"Koeksisters, dozen",p:60},{n:"Custom cake (order 3 days ahead)",p:380}],rating:4.5,n:33,reviews:[]}),
+ B({id:12,name:"Corner Bean Café",township:"Lenasia",area:"Ext 1",cats:["coffee","desserts"],hue:200,tagline:"Specialty coffee and samoosas.",
+   phone:"062 117 3349",wa:"27621173349",hours:W([7,18],[8,17],[8,13]),menu:[{n:"Cappuccino",p:29},{n:"Chai latte",p:34},{n:"Samoosas, 6",p:30}],rating:4.4,n:41,reviews:[]}),
+ // pending
+ B({id:13,name:"Gogo's Vetkoek Stand",township:"Soweto",area:"Diepkloof",cats:["street","trad"],hue:30,tagline:"Vetkoek, atchar and tea outside Zone 6 station.",
+   phone:"071 330 8812",wa:"27713308812",hours:W([5.5,11],[6,12],null),status:"pending",verified:false,submitted:"Today, 07:42",
+   docs:{reg:false,id:true,phone:true,pin:true,photos:true},menu:[{n:"Vetkoek & mince",p:15},{n:"Vetkoek & atchar",p:10},{n:"Tea",p:8}],rating:0,n:0}),
+ B({id:14,name:"QUICK EATS PRO DEALS",township:"Mamelodi",area:"Mamelodi West",cats:["catering","cakes","braai","coffee"],hue:260,tagline:"Cheapest catering in Gauteng!! Pay deposit to reserve.",
+   phone:"081 000 1234",wa:"27810001234",hours:W([0,24],[0,24],[0,24]),status:"pending",verified:false,submitted:"Yesterday, 23:10",
+   docs:{reg:false,id:false,phone:true,pin:false,photos:false},risk:"Phone number already used by a suspended listing. Asks for deposits up front. No photos or location pin.",
+   menu:[{n:"Wedding for 200 people",p:2000}],rating:0,n:0})
+];
+D.reports = [
+  {id:1,kind:"review",biz:2,text:"\"Worst kota ever, they are thieves, go to my cousin's shop instead\"",reason:"Owner says reviewer runs a competing shop",from:"Business owner",when:"2 h ago"},
+  {id:2,kind:"business",biz:10,text:"Listed hours say open until 21:00 but closed at 18:00 three times this month.",reason:"Wrong information",from:"Customer",when:"Yesterday"}
+];
+D.promos = [{id:1,biz:5,plan:"Featured listing",status:"active",until:"30 Nov"},{id:2,biz:1,plan:"Business of the Week",status:"active",until:"28 Oct"}];
+const OWNER_ID = 1;
+
+/* ---------------- helpers ---------------- */
+const $ = s=>document.querySelector(s);
+const esc = s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const biz = id=>D.biz.find(b=>b.id===+id);
+const cat = id=>D.cats.find(c=>c.id===id);
+const live = ()=>D.biz.filter(b=>b.status==="live");
+const R = n=>"R"+Number(n).toLocaleString("en-ZA");
+const tt = x=>String(Math.floor(x)).padStart(2,"0")+":"+(x%1?"30":"00");
+const span = r=> r ? (r[0]===0&&r[1]===24?"Open 24 hours":tt(r[0])+" – "+tt(r[1])) : "Closed";
+function todayHours(b){const d=new Date().getDay();return d===0?b.hours.sun:d===6?b.hours.sat:b.hours.wk}
+function isOpen(b){const r=todayHours(b);if(!r)return false;const n=new Date(),h=n.getHours()+n.getMinutes()/60;return h>=r[0]&&h<r[1]}
+function rating(b){const all=b.reviews.slice(b.baseReviews??b.reviews.length);let sum=b.rating*b.n,n=b.n;all.forEach(r=>{sum+=r.stars;n++});return {avg:n?sum/n:0,n}}
+function dist(b){ if(b.township!==C.township) return null; const k=(b.id*37)%13; return b.area===C.area? (0.3+k/10) : (1.6+((b.id*53)%40)/10); }
+const ART={
+ trad:`<circle cx="50" cy="52" r="36" fill="#FBF7EF"/><circle cx="50" cy="52" r="29" fill="none" stroke="#E9E1D2" stroke-width="1.5"/><ellipse cx="38" cy="50" rx="15" ry="13" fill="#F2E4C4"/><ellipse cx="35" cy="45" rx="8" ry="4.5" fill="#FFF8E8"/><path d="M50 39c11-5 23 3 21 14s-15 14-22 7-7-17 1-21z" fill="#8A3B1E"/><circle cx="58" cy="47" r="3.4" fill="#E0662B"/><circle cx="65" cy="55" r="2.8" fill="#E0662B"/><circle cx="55" cy="57" r="2.4" fill="#F2B53A"/><circle cx="61" cy="62" r="2" fill="#5B2412"/><path d="M33 65c7 7 18 7 23 2-7-1-14-5-23-2z" fill="#3E8E41"/><path d="M36 66c5 2 11 2 16 0" stroke="#2D6B30" stroke-width="1.2" fill="none"/>`,
+ kota:`<g transform="rotate(-6 50 55)"><rect x="24" y="40" width="52" height="40" rx="9" fill="#C97F2E"/><rect x="28" y="44" width="44" height="32" rx="7" fill="#F4D9A0"/><g fill="#F7C948" stroke="#C98A12" stroke-width="1.2"><rect x="31" y="24" width="6" height="28" rx="2" transform="rotate(-14 34 38)"/><rect x="40" y="20" width="6" height="30" rx="2" transform="rotate(-4 43 35)"/><rect x="50" y="22" width="6" height="28" rx="2" transform="rotate(8 53 36)"/><rect x="58" y="26" width="6" height="26" rx="2" transform="rotate(18 61 39)"/></g><ellipse cx="44" cy="52" rx="13" ry="7" fill="#E7809A"/><rect x="50" y="46" width="16" height="12" rx="2" fill="#FFC93C" transform="rotate(10 58 52)"/><path d="M30 60h40" stroke="#8C3F1D" stroke-width="5" stroke-linecap="round"/></g>`,
+ braai:`<circle cx="50" cy="52" r="36" fill="#2A2725"/><g stroke="#55504B" stroke-width="2.5"><path d="M20 40h60M16 52h68M20 64h60"/></g><path d="M50 52m-4 0a4 4 0 118 0a8 8 0 11-16 0a12 12 0 1124 0a16 16 0 11-32 0" fill="none" stroke="#8C3420" stroke-width="7" stroke-linecap="round"/><path d="M50 52m-4 0a4 4 0 118 0a8 8 0 11-16 0a12 12 0 1124 0a16 16 0 11-32 0" fill="none" stroke="#B8553A" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="3 6"/><path d="M70 22c4 6-2 8 2 13" stroke="#F2B53A" stroke-width="3" fill="none" stroke-linecap="round"/>`,
+ cakes:`<ellipse cx="50" cy="80" rx="34" ry="6" fill="#FFFFFF" opacity=".9"/><rect x="24" y="54" width="52" height="25" rx="5" fill="#F7C4D2"/><rect x="32" y="35" width="36" height="21" rx="5" fill="#FCE4EC"/><path d="M24 58c4 6 8 0 12 5s8-3 12 3 8-2 12 3 8-4 16-2v-8H24z" fill="#FFFFFF"/><path d="M32 39c3 5 6 0 9 4s6-2 9 3 6-2 9 2 6-2 9-1v-7H32z" fill="#E7809A"/><rect x="48" y="22" width="4" height="13" rx="1.5" fill="#6FB1E8"/><path d="M50 13c3 4 3 7 0 9-3-2-3-5 0-9z" fill="#F2B53A"/><circle cx="34" cy="70" r="2" fill="#E7809A"/><circle cx="50" cy="72" r="2" fill="#E7809A"/><circle cx="66" cy="70" r="2" fill="#E7809A"/>`,
+ catering:`<ellipse cx="50" cy="78" rx="38" ry="6" fill="#1F2A24" opacity=".25"/><rect x="18" y="56" width="64" height="18" rx="4" fill="#9AA5AC"/><rect x="18" y="56" width="64" height="5" fill="#C9D1D6"/><path d="M20 56c0-20 14-30 30-30s30 10 30 30z" fill="#DDE3E7"/><path d="M28 50c2-10 10-17 20-18" stroke="#FFFFFF" stroke-width="3" fill="none" stroke-linecap="round"/><rect x="44" y="18" width="12" height="9" rx="4" fill="#9AA5AC"/><path d="M30 76v6M70 76v6" stroke="#5E676D" stroke-width="4" stroke-linecap="round"/>`,
+ coffee:`<ellipse cx="48" cy="76" rx="32" ry="8" fill="#FBF7EF"/><path d="M26 42h44v14c0 13-10 22-22 22s-22-9-22-22z" fill="#FFFFFF"/><path d="M70 47h5a8 8 0 010 16h-6" stroke="#FFFFFF" stroke-width="5" fill="none"/><ellipse cx="48" cy="43" rx="22" ry="5" fill="#6B3A20"/><path d="M42 43c3-3 9-3 12 0-3 2-9 2-12 0z" fill="#E9C9A0"/><path d="M38 32c-4-5 4-8 0-13M50 30c-4-5 4-8 0-13M62 32c-4-5 4-8 0-13" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" opacity=".85"/>`,
+ desserts:`<ellipse cx="50" cy="66" rx="36" ry="16" fill="#FBF7EF"/><ellipse cx="50" cy="64" rx="28" ry="11" fill="#F6D774"/><path d="M34 42l30-6 4 22-30 6z" fill="#B5652B"/><path d="M34 42l30-6 2 6-30 6z" fill="#7E3A15"/><path d="M38 52l26-5" stroke="#D88A49" stroke-width="2"/><circle cx="62" cy="40" r="3" fill="#FFFFFF"/>`,
+ chicken:`<path d="M64 30c12 2 18 18 10 28-6 8-16 8-24 4L36 72a5 5 0 11-8-2 5 5 0 11-2-8l10-14c-4-8-2-18 6-22 6-3 14-4 22 4z" fill="#D9862E"/><path d="M64 30c12 2 18 18 10 28-6 8-16 8-24 4l-2-2c10 2 22-4 22-16 0-6-2-11-6-14z" fill="#B5651D"/><path d="M36 72a5 5 0 11-8-2 5 5 0 11-2-8l6-6 10 10z" fill="#FFF6E5"/><circle cx="56" cy="40" r="2" fill="#F2B53A"/><circle cx="62" cy="48" r="1.8" fill="#F2B53A"/>`,
+ street:`<path d="M18 62l8 18h48l8-18z" fill="#F4EDE1"/><path d="M18 62h64" stroke="#D9CDB8" stroke-width="2"/><circle cx="36" cy="54" r="15" fill="#D4923A"/><circle cx="62" cy="52" r="15" fill="#C98230"/><circle cx="49" cy="40" r="14" fill="#E0A048"/><ellipse cx="45" cy="35" rx="6" ry="3" fill="#F2C57C"/><ellipse cx="57" cy="47" rx="5" ry="2.5" fill="#E8B060"/><ellipse cx="31" cy="49" rx="5" ry="2.5" fill="#EBB46A"/>`,
+ _:`<circle cx="50" cy="52" r="34" fill="#FBF7EF"/><circle cx="50" cy="52" r="24" fill="none" stroke="#E2D9C8" stroke-width="2"/><path d="M78 26v52M74 26v14a4 4 0 008 0V26" stroke="#FFFFFF" stroke-width="3" fill="none" stroke-linecap="round"/>`
+};
+const CATHUE={trad:28,kota:42,braai:8,cakes:335,catering:160,coffee:25,desserts:45,chicken:20,street:35};
+const art=c=>`<svg class="art" viewBox="0 0 100 100" aria-hidden="true">${ART[c]||ART._}</svg>`;
+function photo(b,cls="",label){const h=b.hue,up=b.uploads&&b.uploads[0];return `<div class="ph ${cls}" style="background:${up?`center/cover no-repeat url(${up})`:`linear-gradient(140deg,hsl(${h} 58% 50%),hsl(${(h+24)%360} 64% 32%))`}">${up?"":art(b.cats[0])}${label?`<span>${esc(label)}</span>`:""}</div>`}
+const I=p=>`<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
+const IC={
+ home:I('<path d="M3 11l9-7 9 7v9a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z"/>'),
+ search:I('<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>'),
+ heart:I('<path d="M12 20s-8-5-8-11a4.5 4.5 0 018-3 4.5 4.5 0 018 3c0 6-8 11-8 11z"/>'),
+ user:I('<circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/>'),
+ bell:I('<path d="M6 16V11a6 6 0 0112 0v5l2 2H4z"/><path d="M10 21h4"/>'),
+ chart:I('<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>'),
+ store:I('<path d="M4 9l1-5h14l1 5M4 9v11h16V9M4 9h16M9 20v-6h6v6"/>'),
+ menu:I('<path d="M5 4h14v16H5zM9 9h6M9 13h6M9 17h3"/>'),
+ star:I('<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>'),
+ mega:I('<path d="M3 10v4h4l8 5V5L7 10zM18 9a4 4 0 010 6"/>'),
+ plus:I('<path d="M12 5v14M5 12h14"/>'),
+ check:I('<path d="M12 3l8 3v6c0 5-4 8-8 9-4-1-8-4-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/>'),
+ grid:I('<rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/>'),
+ flag:I('<path d="M5 21V4h11l-2 4 2 4H5"/>'),
+ map:I('<path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/>'),
+ pulse:I('<path d="M3 12h4l3-7 4 14 3-7h4"/>'),
+ out:I('<path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10"/>'),
+ chev:I('<path d="M9 6l6 6-6 6"/>')
+};
+function initials(n){return n.replace(/[^A-Za-z ]/g,"").split(" ").filter(Boolean).slice(0,2).map(w=>w[0]).join("").toUpperCase()}
+function starsTxt(v){return `<span class="star">★</span> ${v.toFixed(1)}`}
+D.biz.forEach(b=>b.baseReviews=b.reviews.length);
+
+let toastT;
+function toast(msg,btn,act){const t=$("#toast");t.innerHTML=`<span>${esc(msg)}</span>`+(btn?`<button data-act="${act}">${esc(btn)}</button>`:"");t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>t.hidden=true,4200)}
+
+const ICON={
+ back:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg>',
+ pin:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 21s7-6.2 7-12a7 7 0 10-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/></svg>',
+ call:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 005 5L15 13l5 2v4a2 2 0 01-2 2A16 16 0 013 6a2 2 0 012-2"/></svg>',
+ wa:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20l1.3-4A8 8 0 1112 20a8 8 0 01-4-1l-4 1z"/><path d="M9 9.5c0 3 2.5 5.5 5.5 5.5"/></svg>',
+ dir:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l9 10-9 10-9-10z"/><path d="M9 13v-2h5l-2-2m2 2l-2 2"/></svg>'
+};
+
+/* ---------------- app state ---------------- */
+let role="customer";
+const C = {township:"Soweto",area:"Orlando",stack:[{s:"home"}],ptab:"menu",sheet:null,filters:{open:false,del:false,ver:false},draftStars:0,picking:null,saved:new Set([5]),user:null};
+const O = {tab:"overview",reg:null};
+const A = {tab:"approvals"};
+
+/* ---------------- search ---------------- */
+function parseQuery(q){
+  const s=" "+q.toLowerCase()+" ";
+  let township=null,area=null;
+  for(const t in D.townships){
+    if(s.includes(t.toLowerCase())) township=t;
+    for(const a of D.townships[t]){ if(a.length>5 && !/^Ext/.test(a) && s.includes(a.toLowerCase())){area=a;township=t;} }
+  }
+  const near=/near me|nearby|around me|close by/.test(s);
+  const cats=D.cats.filter(c=>c.kw.some(k=>s.includes(k))||s.includes(c.label.toLowerCase())).map(c=>c.id);
+  let text="";
+  if(!cats.length){
+    text=q.toLowerCase().replace(/\b(in|near|me|nearby|around|the|a|food|where|can|i|get|to|eat|some|something)\b/g," ");
+    for(const t in D.townships){text=text.replace(t.toLowerCase()," ");D.townships[t].forEach(a=>text=text.replace(a.toLowerCase()," "))}
+    text=text.replace(/\s+/g," ").trim();
+  }
+  if(!township||near){ if(!township){township=C.township; area=area||(near?C.area:null);} }
+  return {cats,township,area,text,near};
+}
+function runSearch(p){
+  let r=live().filter(b=>b.township===p.township);
+  if(p.cats&&p.cats.length) r=r.filter(b=>b.cats.some(c=>p.cats.includes(c)));
+  if(p.text){const w=p.text.split(" ");r=r.filter(b=>w.every(x=>(b.name+" "+b.tagline+" "+b.menu.map(m=>m.n).join(" ")).toLowerCase().includes(x)))}
+  if(C.filters.open) r=r.filter(isOpen);
+  if(C.filters.del) r=r.filter(b=>b.delivery);
+  if(C.filters.ver) r=r.filter(b=>b.verified);
+  r.sort((a,b)=>(!!b.featured-!!a.featured)||((b.area===p.area)-(a.area===p.area))||(rating(b).avg-rating(a).avg));
+  return r;
+}
+
+/* ---------------- customer screens ---------------- */
+const cur=()=>C.stack[C.stack.length-1];
+function go(s){C.stack.push(s);C.sheet=null;C.ptab="menu";C.draftStars=0;renderPhone(true)}
+function back(){if(C.stack.length>1)C.stack.pop();C.sheet=null;renderPhone(true)}
+function home(){C.stack=[{s:"home"}];C.sheet=null;renderPhone(true)}
+
+function appbar(title,showBack=true){
+  return `<div class="appbar">${showBack?`<button class="iconbtn" data-act="back" aria-label="Back">${ICON.back}</button>`:""}<b style="font-size:16px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(title)}</b></div>`;
+}
+function itemRow(b){
+  const d=dist(b),rt=rating(b),open=isOpen(b);
+  return `<button class="item" data-act="open" data-id="${b.id}">
+    ${photo(b)}
+    <div style="min-width:0">
+      <h4>${esc(b.name)} ${b.verified?'<span class="tick" title="Verified">✓</span>':""}</h4>
+      <div class="meta"><span>${b.cats.map(c=>cat(c)?.label).filter(Boolean).join(" · ")}</span></div>
+      <div class="meta"><span>${esc(b.area)}${d!=null?" · "+d.toFixed(1)+" km":""}</span>${rt.n?`<span>${starsTxt(rt.avg)} (${rt.n})</span>`:'<span>New</span>'}</div>
+      <div class="pills">${b.featured?'<span class="pill spon">Sponsored</span>':""}<span class="pill ${open?"open":"closed"}">${open?"Open now":"Closed"}</span>${b.delivery?'<span class="pill">Delivers</span>':""}</div>
+    </div></button>`;
+}
+function scrHome(){
+  const feats=live().filter(b=>b.featured);
+  const near=live().filter(b=>b.township===C.township).sort((a,b)=>dist(a)-dist(b)).slice(0,4);
+  return `
+  <div class="appbar" style="justify-content:space-between">
+    <button class="loc" data-act="go" data-s="location"><span style="color:var(--brand)">${ICON.pin}</span><span><small>You are in</small><b>${esc(C.area)}, ${esc(C.township)} ▾</b></span></button>
+    <button class="avatar" data-act="tab" data-t="account" aria-label="Account">${C.user?esc(initials(C.user.name)):IC.user}</button>
+  </div>
+  <div class="pad">
+    <div class="hello">What are you<br><span>looking for?</span></div>
+    <form class="search" data-form="search"><input id="q" type="text" name="q" placeholder="Try “kotas in Mamelodi”" autocomplete="off" aria-label="Search"><button>Find</button></form>
+    <p class="hint">Search like you talk: <button type="button" data-act="try" data-q="Cakes in Mohlakeng">cakes in Mohlakeng</button>, <button type="button" data-act="try" data-q="Catering near me">catering near me</button></p>
+    <div class="sect"><h3>Browse ${esc(C.township)}</h3></div>
+    <div class="cats">${D.cats.map(c=>`<button class="cat" data-act="cat" data-c="${c.id}"><span class="ci" style="background:color-mix(in srgb, hsl(${CATHUE[c.id]??200} 70% 55%) 22%, var(--surface))"><svg viewBox="0 0 100 100" aria-hidden="true">${ART[c.id]||ART._}</svg></span>${esc(c.label)}</button>`).join("")}</div>
+    ${feats.length?`<div class="sect"><h3>Featured this week</h3><small>Paid placements</small></div>`:""}
+  </div>
+  ${feats.length?`<div class="feat">${feats.map(b=>`<button class="featcard" data-act="open" data-id="${b.id}">${photo(b,"",b.name)}<div class="bd"><span class="ribbon">${b.featured==="week"?"Business of the Week":"Featured"}</span><div class="meta" style="margin-top:6px"><span>${esc(b.area)}, ${esc(b.township)}</span><span>${starsTxt(rating(b).avg)}</span></div><div style="font-size:13px;margin-top:3px">${esc(b.tagline)}</div></div></button>`).join("")}</div>`:""}
+  <div class="pad">
+    <div class="sect"><h3>Close to you</h3><small>${esc(C.area)}</small></div>
+    <div class="list">${near.map(itemRow).join("")||'<div class="empty">No listings here yet.</div>'}</div>
+    <div class="sect"><h3>Own a food business?</h3></div>
+    <div class="panel" style="padding:14px"><p style="margin:0 0 10px">List it for free. Customers in your area find you and contact you directly on WhatsApp.</p><button class="btn acc sm" data-act="role" data-role="owner" data-otab="register">List my business</button></div>
+  </div>`;
+}
+function scrLocation(){
+  const t=C.picking||C.township;
+  return appbar("Choose your location")+`<div class="pad">
+    <button class="btn brand" style="width:100%;margin:4px 0 18px;display:flex;gap:8px;justify-content:center;align-items:center" data-act="gps">${ICON.pin} Use my current location</button>
+    <div class="lbl" style="margin-bottom:8px">1. Township</div>
+    <div class="list" style="gap:6px">${Object.keys(D.townships).map(x=>`<label class="radio"><input type="radio" name="tw" data-act="pickT" data-t="${esc(x)}" ${x===t?"checked":""}> <b>${esc(x)}</b><span class="muted" style="margin-left:auto;font-size:12px">${live().filter(b=>b.township===x).length} places</span></label>`).join("")}</div>
+    <div class="lbl" style="margin:18px 0 8px">2. Area in ${esc(t)}</div>
+    <div class="checks">${D.townships[t].map(a=>`<button class="chip" data-act="pickA" data-t="${esc(t)}" data-a="${esc(a)}" aria-pressed="${a===C.area&&t===C.township}">${esc(a)}</button>`).join("")}</div>
+  </div>`;
+}
+function scrResults(p){
+  const r=runSearch(p);
+  const what=p.cats.length?p.cats.map(c=>cat(c).label).join(" + "):(p.text?`“${p.text}”`:"Everything");
+  const where=p.area?`${p.area}, ${p.township}`:p.township;
+  return appbar(`${what} in ${p.township}`)+`<div class="pad">
+    ${p.q?`<div class="understood">We searched: <b>${esc(what)}</b> in <b>${esc(where)}</b>${p.near?" (near you)":""}</div>`:""}
+    <div class="chips" style="margin:6px 0 12px">
+      <button class="chip" data-act="filt" data-f="open" aria-pressed="${C.filters.open}">Open now</button>
+      <button class="chip" data-act="filt" data-f="del" aria-pressed="${C.filters.del}">Delivers</button>
+      <button class="chip" data-act="filt" data-f="ver" aria-pressed="${C.filters.ver}">Verified</button>
+    </div>
+    <div class="meta" style="margin-bottom:10px">${r.length} place${r.length===1?"":"s"} · closest to ${esc(p.area||C.area)} first</div>
+    <div class="list">${r.map(itemRow).join("")||`<div class="empty"><b>Nothing listed yet</b>No ${esc(what.toLowerCase())} in ${esc(where)} matches. Know a spot? Tell them listing is free.</div>`}</div>
+  </div>`;
+}
+function mapSvg(b){
+  let s=b.id*97,rnd=()=>{s=(s*9301+49297)%233280;return s/233280};
+  let lines="";for(let i=0;i<7;i++){const y=12+rnd()*120;lines+=`<path d="M0 ${y.toFixed(0)} L340 ${(y+(rnd()-.5)*40).toFixed(0)}" stroke="var(--line)" stroke-width="${i%3?3:6}"/>`}
+  for(let i=0;i<6;i++){const x=20+rnd()*300;lines+=`<path d="M${x.toFixed(0)} 0 L${(x+(rnd()-.5)*50).toFixed(0)} 150" stroke="var(--line)" stroke-width="${i%2?3:5}"/>`}
+  return `<svg viewBox="0 0 340 150" role="img" aria-label="Map showing ${esc(b.name)} in ${esc(b.area)}"><rect width="340" height="150" fill="var(--surface-2)"/>${lines}
+   <circle cx="170" cy="72" r="22" fill="var(--accent)" opacity=".25"/><path d="M170 86s-12-10-12-20a12 12 0 0124 0c0 10-12 20-12 20z" fill="var(--bad)"/><circle cx="170" cy="66" r="4" fill="var(--surface)"/>
+   <text x="12" y="140" font-size="11" fill="var(--muted)" font-family="Figtree,sans-serif">${esc(b.area)}, ${esc(b.township)}</text></svg>`;
+}
+function scrProfile(id){
+  const b=biz(id); if(!b||b.status!=="live") return appbar("Not available")+`<div class="empty"><b>This listing is not live</b>It may be waiting for approval or was suspended by an admin.</div>`;
+  const rt=rating(b),open=isOpen(b);
+  let tab="";
+  if(C.ptab==="menu") tab=`<div class="menu">${b.menu.map(m=>`<div class="mrow"><b>${esc(m.n)}</b><span class="mono">${R(m.p)}</span></div>`).join("")}</div><p class="hint">Prices are set by the business. Order by WhatsApp or call.</p>`;
+  if(C.ptab==="info") tab=`<dl class="kv">
+      <dt>Today</dt><dd><span class="pill ${open?"open":"closed"}">${open?"Open":"Closed"}</span> ${span(todayHours(b))}</dd>
+      <dt>Mon – Fri</dt><dd>${span(b.hours.wk)}</dd><dt>Saturday</dt><dd>${span(b.hours.sat)}</dd><dt>Sunday</dt><dd>${span(b.hours.sun)}</dd></dl>
+    <dl class="kv"><dt>Services</dt><dd><div class="pills" style="margin:0">${b.services.map(s=>`<span class="pill">${esc(s)}</span>`).join("")}</div></dd>
+      <dt>Delivery</dt><dd>${b.delivery?`<b>Yes</b> · ${esc(b.delAreas.join(", "))}`:"No, collection only"}</dd>
+      ${b.also.length?`<dt>Also on</dt><dd>${b.also.map(a=>`<span class="pill">${esc(a)}</span>`).join(" ")}</dd>`:""}
+      ${Object.keys(b.social).length?`<dt>Social</dt><dd>${b.social.fb?`Facebook: ${esc(b.social.fb)}<br>`:""}${b.social.ig?`Instagram: ${esc(b.social.ig)}<br>`:""}${b.social.tt?`TikTok: ${esc(b.social.tt)}`:""}</dd>`:""}
+      <dt>Phone</dt><dd class="mono">${esc(b.phone)}</dd></dl>
+    <div class="map">${mapSvg(b)}</div>
+    <button class="linkbtn" data-act="sheet" data-k="report" data-id="${b.id}">Report this business</button>`;
+  if(C.ptab==="rev") tab=`<div style="display:flex;gap:14px;align-items:center;padding:14px 0;border-bottom:1px solid var(--line)"><div style="font-family:var(--f-display);font-size:40px;font-weight:800">${rt.n?rt.avg.toFixed(1):"–"}</div><div><div class="star" style="font-size:18px">${"★".repeat(Math.round(rt.avg))}<span style="color:var(--line)">${"★".repeat(5-Math.round(rt.avg))}</span></div><div class="muted" style="font-size:13px">${rt.n} reviews</div></div></div>
+    <form data-form="review" data-id="${b.id}" style="display:grid;gap:8px;padding:14px 0;border-bottom:1px solid var(--line)">
+      <div class="lbl">Rate your visit</div>
+      <div class="stars-in">${[1,2,3,4,5].map(i=>`<button type="button" data-act="star" data-v="${i}" class="${i<=C.draftStars?"on":""}" aria-label="${i} stars">★</button>`).join("")}</div>
+      <textarea id="revtext" name="t" placeholder="What did you eat? How was it?" aria-label="Your review"></textarea>
+      <button class="btn acc sm" style="justify-self:start">Post review</button></form>
+    ${b.reviews.slice().reverse().map((r,i)=>{const idx=b.reviews.length-1-i;return `<div class="review"><div class="who"><b>${esc(r.who)}</b><span class="muted">${esc(r.date)}</span></div><div class="star">${"★".repeat(r.stars)}</div><div>${esc(r.text)}</div>${r.reply?`<div class="reply"><b>Reply from ${esc(b.name)}</b>${esc(r.reply)}</div>`:""}<button class="linkbtn" style="padding:6px 0 0;color:var(--muted)" data-act="flag" data-id="${b.id}" data-r="${idx}">Report review</button></div>`}).join("")||'<p class="muted">No written reviews yet. Be the first.</p>'}`;
+  return `<div style="position:relative">${photo(b,"hero",b.name)}<button class="iconbtn" style="position:absolute;top:14px;left:14px;z-index:2" data-act="back" aria-label="Back">${ICON.back}</button><button class="iconbtn heart" data-act="save" data-id="${b.id}" aria-pressed="${C.saved.has(b.id)}" aria-label="Save place">${IC.heart}</button></div>
+  ${b.featured?`<div class="pad" style="margin-top:12px"><span class="ribbon">${b.featured==="week"?"Business of the Week":"Featured"}</span></div>`:""}
+  <div class="prof">
+    <h2>${esc(b.name)} ${b.verified?'<span class="tick" style="width:20px;height:20px;font-size:12px" title="Verified by admin">✓</span>':""}</h2>
+    <div class="meta" style="font-size:13.5px"><span>${b.cats.map(c=>cat(c)?.label).filter(Boolean).join(" · ")}</span></div>
+    <div class="meta" style="font-size:13.5px"><span>${esc(b.area)}, ${esc(b.township)}</span>${rt.n?`<span>${starsTxt(rt.avg)} (${rt.n})</span>`:""}<span class="pill ${open?"open":"closed"}">${open?"Open now":"Closed now"}</span></div>
+    <p style="margin:10px 0 0">${esc(b.tagline)}</p>
+    <div class="actions">
+      <button class="act" data-act="sheet" data-k="call" data-id="${b.id}">${ICON.call}Call</button>
+      <button class="act wa" data-act="sheet" data-k="wa" data-id="${b.id}">${ICON.wa}WhatsApp</button>
+      <button class="act" data-act="sheet" data-k="dir" data-id="${b.id}">${ICON.dir}Directions</button>
+    </div>
+  </div>
+  <div class="tabs" role="tablist"><button role="tab" data-act="ptab" data-t="menu" aria-selected="${C.ptab==="menu"}">Menu</button><button role="tab" data-act="ptab" data-t="info" aria-selected="${C.ptab==="info"}">Info</button><button role="tab" data-act="ptab" data-t="rev" aria-selected="${C.ptab==="rev"}">Reviews</button></div>
+  <div class="pad">${tab}</div>`;
+}
+function sheetHtml(){
+  const s=C.sheet;if(!s)return"";const b=biz(s.id);let h="";
+  if(s.k==="call") h=`<h3>Call ${esc(b.name)}</h3><div class="bignum">${esc(b.phone)}</div><div class="row"><button class="btn" data-act="copy" data-v="${esc(b.phone)}">Copy number</button><a class="btn ghost" style="text-decoration:none" href="tel:${esc(b.phone.replace(/ /g,""))}">Call</a></div><p class="hint">You deal with the business directly. We don't take orders or payments.</p>`;
+  if(s.k==="wa") h=`<h3>WhatsApp ${esc(b.name)}</h3><p style="margin:0">We'll open WhatsApp with this message ready:</p><div class="reply" style="margin:0">Hi ${esc(b.name)}, I found you on Find Something to Eat. Are you open now?</div><div class="row"><a class="btn brand" style="text-decoration:none" target="_blank" rel="noopener" href="https://wa.me/${esc(b.wa)}?text=${encodeURIComponent(`Hi ${b.name}, I found you on Find Something to Eat. Are you open now?`)}">Open WhatsApp</a><button class="btn ghost" data-act="copy" data-v="${esc(b.phone)}">Copy number</button></div><p class="hint">Demo number. In the real app this opens the owner's WhatsApp.</p>`;
+  if(s.k==="dir") h=`<h3>Directions</h3><div class="map" style="margin:0">${mapSvg(b)}</div><a class="btn" style="text-decoration:none;text-align:center" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(b.area+", "+b.township+", South Africa")}">Open in Google Maps</a>`;
+  if(s.k==="report") h=`<h3>Report ${esc(b.name)}</h3><form data-form="report" data-id="${b.id}" style="display:grid;gap:8px">${["Fake business or scam","Wrong hours or information","Asked for payment up front","Offensive content"].map((r,i)=>`<label class="radio"><input type="radio" name="r" value="${r}" ${i===0?"checked":""}> ${r}</label>`).join("")}<button class="btn bad">Send report</button></form><p class="hint">An admin reviews every report.</p>`;
+  return `<div class="scrim" data-act="close"></div><div class="sheet" role="dialog" aria-label="Options">${h}<button class="btn ghost" data-act="close">Close</button></div>`;
+}
+function scrSearch(){
+  const recent=[...new Set(D.searches.slice().reverse())].slice(0,5);
+  return appbar("Search",false)+`<div class="pad">
+    <form class="search" data-form="search"><input id="q" type="text" name="q" placeholder="Food, business or area" autocomplete="off" aria-label="Search"><button>Find</button></form>
+    <div class="sect"><h3>Recent searches</h3></div>
+    <div class="rows">${recent.map(q=>`<button data-act="try" data-q="${esc(q)}">${IC.search}<span>${esc(q)}</span><span class="r">${IC.chev}</span></button>`).join("")}</div>
+    <div class="sect"><h3>Popular in ${esc(C.township)}</h3></div>
+    <div class="checks">${D.cats.slice(0,6).map(c=>`<button class="chip" data-act="cat" data-c="${c.id}">${esc(c.label)}</button>`).join("")}</div>
+    <div class="sect"><h3>Other townships</h3></div>
+    <div class="rows">${Object.keys(D.townships).filter(t=>t!==C.township).map(t=>`<button data-act="pickA" data-t="${esc(t)}" data-a="${esc(D.townships[t][0])}">${IC.map}<span>${esc(t)}</span><span class="r">${live().filter(b=>b.township===t).length} places</span></button>`).join("")}</div>
+  </div>`;
+}
+function scrSaved(){
+  const list=[...C.saved].map(biz).filter(b=>b&&b.status==="live");
+  return appbar("Saved places",false)+`<div class="pad">${list.length?`<div class="list">${list.map(itemRow).join("")}</div>`:`<div class="empty"><div class="emptyart">${IC.heart}</div><b>No saved places yet</b>Tap the heart on a business to keep it here for next time.</div>`}</div>`;
+}
+function scrAccount(){
+  if(!C.user) return appbar("Account",false)+`<div class="pad">
+    <div class="hello" style="font-size:24px">Create your account</div>
+    <p class="muted" style="margin-top:-6px">Save places, write reviews and get updates from businesses you like. Browsing is free without an account.</p>
+    <form data-form="signup" class="form" style="margin-top:14px">
+      <div class="field"><label for="su-name">Your name</label><input id="su-name" type="text" value="Naledi Mokoena" required></div>
+      <div class="field"><label for="su-phone">Cellphone number</label><input id="su-phone" type="tel" value="071 555 0192" required><span class="help">We send a one-time PIN by SMS.</span></div>
+      <button class="btn acc">Continue</button>
+    </form>
+    <div class="sect"><h3>For business owners</h3></div>
+    <div class="rows"><button data-act="role" data-role="owner" data-otab="register">${IC.store}<span>List your business for free</span><span class="r">${IC.chev}</span></button></div>
+  </div>`;
+  return appbar("Account",false)+`<div class="pad">
+    <div class="row" style="gap:14px;margin:6px 0 18px"><div class="avatar lg">${esc(initials(C.user.name))}</div><div><b style="font-size:18px">${esc(C.user.name)}</b><div class="muted mono" style="font-size:13px">${esc(C.user.phone)}</div></div></div>
+    <div class="rows">
+      <button data-act="tab" data-t="saved">${IC.heart}<span>Saved places</span><span class="r">${C.saved.size}</span></button>
+      <button data-act="go" data-s="location">${IC.map}<span>My area</span><span class="r">${esc(C.area)}</span></button>
+      <button data-act="role" data-role="owner" data-otab="register">${IC.store}<span>List your business</span><span class="r">${IC.chev}</span></button>
+      <button data-act="signout">${IC.out}<span>Sign out</span></button>
+    </div></div>`;
+}
+function tabbar(){
+  const t=C.stack[0].s;
+  return [["home","Home",IC.home],["search","Search",IC.search],["saved","Saved",IC.heart],["account","Account",IC.user]].map(x=>`<button data-act="tab" data-t="${x[0]}" aria-current="${t===x[0]}">${x[2]}${x[1]}</button>`).join("");
+}
+function renderPhone(top){
+  const s=cur();let h="";
+  if(s.s==="home")h=scrHome();
+  if(s.s==="search")h=scrSearch();
+  if(s.s==="saved")h=scrSaved();
+  if(s.s==="account")h=scrAccount();
+  if(s.s==="location")h=scrLocation();
+  if(s.s==="results")h=scrResults(s.p);
+  if(s.s==="profile")h=scrProfile(s.id);
+  const scr=$("#screen");if(!scr)return;
+  const y=scr.scrollTop;
+  scr.innerHTML=h;
+  $("#tabbar").innerHTML=tabbar();
+  $("#sheetHost").innerHTML=sheetHtml();
+  scr.style.scrollBehavior="auto";scr.scrollTop=top?0:y;scr.style.scrollBehavior="";
+}
+function custView(){
+  return `<div class="cust">
+   <div class="phone">
+     <div class="statusbar" aria-hidden="true"><span>09:41</span><svg viewBox="0 0 60 12" fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5" width="3" height="7" rx="1"/><rect x="10" y="2" width="3" height="10" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/><path d="M29 11l-6-6a8.5 8.5 0 0112 0z"/><rect x="40" y="1" width="18" height="10" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.4"/><rect x="42" y="3" width="12" height="6" rx="1"/></svg></div>
+     <div class="screen" id="screen"></div>
+     <nav class="tabbar" id="tabbar" aria-label="App sections"></nav>
+     <div id="sheetHost"></div></div>
+   <section class="guide">
+     <h1>Find it. Contact them. <em>Go there.</em></h1>
+     <p>A directory of township food businesses that the owners run themselves. Customers pick an area and a craving, then call or WhatsApp the business directly. No orders, no delivery fleet.</p>
+     <div class="tries">
+       <button class="try" data-act="try" data-q="Kotas in Mamelodi"><span class="k">Search</span><span>“Kotas in Mamelodi”</span></button>
+       <button class="try" data-act="try" data-q="Cakes in Mohlakeng"><span class="k">Search</span><span>“Cakes in Mohlakeng”</span></button>
+       <button class="try" data-act="try" data-q="Catering near me"><span class="k">Search</span><span>“Catering near me”</span></button>
+       <button class="try" data-act="open" data-id="1"><span class="k">Profile</span><span>Mama Thandi's Kitchen: menu, hours, WhatsApp</span></button>
+       <button class="try" data-act="role" data-role="owner" data-otab="profile"><span class="k">Owner</span><span>Edit a menu price and see it change in the app</span></button>
+       <button class="try" data-act="role" data-role="admin" data-atab="approvals"><span class="k">Admin</span><span>Approve Gogo's Vetkoek Stand, then search “vetkoek”</span></button>
+     </div>
+     <p class="principle">You tell us where you are and what you're looking for. We show you what's around you.</p>
+   </section></div>`;
+}
+
+/* ---------------- owner ---------------- */
+function ownerView(){
+  const b=biz(OWNER_ID),rt=rating(b);
+  const nav=[["overview","Overview",IC.chart],["profile","Business profile",IC.store],["menu","Menu & prices",IC.menu],["reviews","Reviews",IC.star,b.reviews.filter(r=>!r.reply).length],["promote","Get more visibility",IC.mega],["register","Register a business",IC.plus]];
+  let m="";
+  if(O.tab==="overview"){
+    const days=["Thu","Fri","Sat","Sun","Mon","Tue","Wed"],v=[48,57,81,92,44,51,39],max=100,H=150,bw=34,gap=18;
+    const bars=v.map((x,i)=>{const h=x/max*(H-30),X=40+i*(bw+gap);return `<rect x="${X}" y="${H-20-h}" width="${bw}" height="${h}" rx="5" fill="${i===3?"var(--accent)":"var(--brand)"}"/><text x="${X+bw/2}" y="${H-5}" text-anchor="middle">${days[i]}</text><text x="${X+bw/2}" y="${H-25-h}" text-anchor="middle" style="fill:var(--ink);font-weight:600">${x}</text>`}).join("");
+    const grid=[0,50,100].map(g=>{const y=H-20-g/max*(H-30);return `<line x1="34" x2="400" y1="${y}" y2="${y}" stroke="var(--line)"/><text x="28" y="${y+4}" text-anchor="end">${g}</text>`}).join("");
+    m=`<h2>Sawubona, Mama Thandi</h2><p>Your listing is <span class="status s-live">Live</span> and <b>verified</b>. These numbers count people who found you and reached out. Sample figures for the last 7 days.</p>
+    <div class="stats"><div class="stat"><small>Profile views</small><b>${b.views}</b> <em>+18%</em></div><div class="stat"><small>WhatsApp taps</small><b>63</b> <em>+9%</em></div><div class="stat"><small>Calls</small><b>21</b></div><div class="stat"><small>Directions</small><b>38</b></div></div>
+    <div class="grid2"><div class="panel"><h3>Profile views per day</h3><div style="overflow-x:auto"><svg class="bars" viewBox="0 0 410 150" style="width:100%;min-width:320px">${grid}${bars}</svg></div><p class="hint">Sunday is your busiest day.</p></div>
+    <div class="panel"><h3>Searches that found you</h3><table><tbody>${[["traditional food orlando",41],["pap and mogodu",27],["catering soweto",19],["sunday 7 colours",12]].map(x=>`<tr><td>${x[0]}</td><td class="mono" style="text-align:right">${x[1]}</td></tr>`).join("")}</tbody></table>
+    <h3 style="margin-top:16px">Rating</h3><div>${starsTxt(rt.avg)} from ${rt.n} reviews</div></div></div>
+    <div class="panel" style="margin-top:16px"><div class="row" style="justify-content:space-between"><h3 style="margin:0">Profile strength</h3><b class="mono">${strength(b)}%</b></div>
+      <div class="meter" style="margin-top:10px"><i style="width:${strength(b)}%"></i></div>
+      <div class="todo">${checklist(b).map(c=>`<div><span class="${c[1]?"ok":"no"}">${c[1]?"✓":"○"}</span>${c[0]}</div>`).join("")}</div></div>`;
+  }
+  if(O.tab==="profile"){
+    const ck=(arr,val)=>arr.includes(val)?"checked":"";
+    m=`<h2>Business profile</h2><p>You keep this up to date. Changes go live in the app straight away.</p>
+    <form class="panel form" data-form="profile">
+      <div class="grid2"><div class="field"><label for="p-name">Business name</label><input id="p-name" type="text" value="${esc(b.name)}"></div>
+      <div class="field"><label for="p-tag">One-line description</label><input id="p-tag" type="text" value="${esc(b.tagline)}"></div></div>
+      <div class="grid2"><div class="field"><label for="p-phone">Phone</label><input id="p-phone" type="tel" value="${esc(b.phone)}"></div>
+      <div class="field"><label for="p-wa">WhatsApp number</label><input id="p-wa" type="tel" value="${esc(b.wa)}"><span class="help">With country code, e.g. 27 71 …</span></div></div>
+      <div class="field"><span class="lbl">Categories</span><div class="checks">${D.cats.map(c=>`<label><input type="checkbox" name="pc" value="${c.id}" ${ck(b.cats,c.id)}> ${esc(c.label)}</label>`).join("")}</div></div>
+      <div class="grid2"><div class="field"><label for="p-wk">Mon – Fri hours</label><select id="p-wk">${hoursOpts(b.hours.wk)}</select></div><div class="field"><label for="p-sun">Sunday</label><select id="p-sun">${hoursOpts(b.hours.sun)}</select></div></div>
+      <label class="switch"><input id="p-del" type="checkbox" ${b.delivery?"checked":""}> We deliver</label>
+      <div class="field"><label for="p-areas">Delivery areas</label><input id="p-areas" type="text" value="${esc(b.delAreas.join(", "))}"><span class="help">Separate with commas.</span></div>
+      <div class="field"><span class="lbl">Also on delivery apps</span><div class="checks">${["Mr D","Uber Eats","Own drivers"].map(a=>`<label><input type="checkbox" name="pa" value="${a}" ${ck(b.also,a)}> ${a}</label>`).join("")}</div></div>
+      <div class="grid2"><div class="field"><label for="p-fb">Facebook page</label><input id="p-fb" type="text" value="${esc(b.social.fb||"")}"></div><div class="field"><label for="p-ig">Instagram</label><input id="p-ig" type="text" value="${esc(b.social.ig||"")}"></div></div>
+      <div class="field"><span class="lbl">Photos</span><div class="row">${photo(b,"thumb")}${photo({...b,hue:b.hue+40,cats:[b.cats[1]||b.cats[0]]},"thumb")}${photo({...b,hue:b.hue+150,cats:["street"]},"thumb")}${(b.uploads||[]).map(u=>`<img class="ph thumb" style="object-fit:cover" src="${u}" alt="Uploaded photo">`).join("")}<label class="ph thumb" style="background:var(--surface-2);color:var(--muted);border:1.5px dashed var(--line);justify-content:center;align-items:center;font:600 13px var(--f-body);cursor:pointer">+ Add photo<input type="file" accept="image/*" id="upl" hidden></label></div><span class="help">The real app uploads from your phone gallery.</span></div>
+      <div class="row"><button class="btn acc">Save changes</button><button type="button" class="btn ghost" data-act="viewInApp">Preview in app</button></div>
+    </form>`;
+  }
+  if(O.tab==="menu"){
+    m=`<h2>Menu & prices</h2><p>Customers see these prices on your profile. Change them whenever your prices change.</p>
+    <form class="panel form" data-form="menu"><div class="menuedit">${b.menu.map((x,i)=>`<div class="r"><input type="text" id="mn${i}" value="${esc(x.n)}" aria-label="Item name"><input type="number" id="mp${i}" value="${x.p}" min="0" aria-label="Price in rand"><button type="button" class="btn ghost sm" data-act="delItem" data-i="${i}">Remove</button></div>`).join("")}</div>
+    <div class="row"><button type="button" class="btn ghost sm" data-act="addItem">+ Add item</button></div><div class="row"><button class="btn acc">Save menu</button><button type="button" class="btn ghost" data-act="viewInApp">Preview in app</button></div></form>`;
+  }
+  if(O.tab==="reviews"){
+    m=`<h2>Reviews</h2><p>Reply publicly to say thanks or fix a problem. If a review is fake or abusive, report it to the admin team.</p><div class="queue">${b.reviews.map((r,i)=>`<div class="panel"><div class="row" style="justify-content:space-between"><b>${esc(r.who)}</b><span class="star">${"★".repeat(r.stars)}</span></div><p style="margin:6px 0">${esc(r.text)}</p>${r.reply?`<div class="reply"><b>Your reply</b>${esc(r.reply)}</div>`:`<form data-form="reply" data-i="${i}" class="form" style="gap:8px"><textarea id="rep${i}" placeholder="Write a reply"></textarea><div class="row"><button class="btn sm brand">Post reply</button><button type="button" class="btn sm ghost" data-act="flag" data-id="${b.id}" data-r="${i}">Report review</button></div></form>`}</div>`).join("")}</div>`;
+  }
+  if(O.tab==="promote"){
+    const req=D.promos.some(p=>p.biz===OWNER_ID&&p.status==="requested");
+    m=`<h2>Get more visibility</h2><p>Your listing stays free. Pay only if you want to show up first. Example pricing for the demo.</p>
+    <div class="plans">
+      <div class="plan cur"><b>Free listing</b><div class="price">R0</div><ul><li>Profile, menu, photos</li><li>WhatsApp and call buttons</li><li>Shows in search for your area</li></ul><span class="status s-live" style="justify-self:start">Your plan</span></div>
+      <div class="plan"><b>Featured listing</b><div class="price">R149<small class="muted" style="font-size:14px"> / month</small></div><ul><li>Top of search in your township</li><li>“Featured” carousel on the home screen</li></ul><button class="btn acc" data-act="promo" data-p="Featured listing" ${req?"disabled":""}>${req?"Request sent":"Request"}</button></div>
+      <div class="plan"><b>Business of the Week</b><div class="price">R299<small class="muted" style="font-size:14px"> / week</small></div><ul><li>Banner on every home screen in the township</li><li>Shared on our social pages</li></ul><span class="status s-live" style="justify-self:start">Active until 28 Oct</span></div>
+    </div>`;
+  }
+  if(O.tab==="register"){
+    const t=O.reg||"Soweto";
+    m=`<h2>Register a new business</h2><p>Takes about 3 minutes. An admin checks every new listing before it appears in the app, to keep out fake businesses and scams.</p>
+    <form class="panel form" data-form="register">
+      <div class="grid2"><div class="field"><label for="r-name">Business name</label><input id="r-name" type="text" value="Bra Jabu's Braai & Kota" required></div>
+      <div class="field"><label for="r-phone">Phone / WhatsApp</label><input id="r-phone" type="tel" value="078 214 6650" required></div></div>
+      <div class="grid2"><div class="field"><label for="r-t">Township</label><select id="r-t" data-act="regT">${Object.keys(D.townships).map(x=>`<option ${x===t?"selected":""}>${esc(x)}</option>`).join("")}</select></div>
+      <div class="field"><label for="r-a">Area</label><select id="r-a">${D.townships[t].map(a=>`<option ${a==="Pimville"?"selected":""}>${esc(a)}</option>`).join("")}</select></div></div>
+      <div class="field"><span class="lbl">What do you sell?</span><div class="checks">${D.cats.map(c=>`<label><input type="checkbox" name="rc" value="${c.id}" ${["braai","kota"].includes(c.id)?"checked":""}> ${esc(c.label)}</label>`).join("")}</div></div>
+      <div class="field"><label for="r-tag">Describe your business in one line</label><input id="r-tag" type="text" value="Braai plates and kotas on Saturdays at the park."></div>
+      <label class="switch"><input id="r-del" type="checkbox"> We deliver</label>
+      <div class="field"><span class="lbl">Verification (helps you get the ✓ badge)</span><div class="checks">
+        <label><input type="checkbox" id="v-reg"> CIPC registration number</label><label><input type="checkbox" id="v-id" checked> Owner ID</label><label><input type="checkbox" id="v-pin" checked> Location pin</label><label><input type="checkbox" id="v-ph" checked> Photos of food / premises</label></div>
+        <span class="help">Informal and home businesses can list without CIPC registration.</span></div>
+      <div class="row"><button class="btn acc">Submit for approval</button></div>
+    </form>`;
+  }
+  return dbar("Business portal",nav.find(n=>n[0]===O.tab)[1],"TM")+`<div class="dash"><nav class="side" aria-label="Owner sections"><div class="who"><div class="row" style="gap:10px;flex-wrap:nowrap">${photo(b,"sm")}<div style="min-width:0"><b>${esc(b.name)}</b><span class="muted" style="font-size:13px">${esc(b.area)}, ${esc(b.township)}</span></div></div></div>${sideNav(nav,O.tab,"otab")}</nav><section class="main">${m}</section></div>`;
+}
+function checklist(b){return [["Photos of your food",true],["Menu with prices",b.menu.length>=3],["Opening hours",!!b.hours.wk],["WhatsApp number",!!b.wa],["Delivery areas",!b.delivery||b.delAreas.length>0],["Instagram or Facebook page",!!(b.social.fb||b.social.ig)],["TikTok page (add one to reach younger customers)",!!b.social.tt],["Replied to every review",b.reviews.every(r=>r.reply)]]}
+function strength(b){const c=checklist(b);return Math.round(c.filter(x=>x[1]).length/c.length*100)}
+function sideNav(nav,cur,act){return nav.map(n=>`<button data-act="${act}" data-t="${n[0]}" aria-current="${cur===n[0]}"><span class="l">${n[2]}${n[1]}</span>${n[3]?`<span class="count">${n[3]}</span>`:""}</button>`).join("")}
+function dbar(area,page,who){return `<div class="dbar"><div class="crumb">${esc(area)} / <b>${esc(page)}</b></div>${role==="admin"?`<label class="dsearch">${IC.search}<input id="dsearch" type="text" value="${esc(A.q||"")}" placeholder="Search businesses or areas" aria-label="Search businesses"></label>`:""}<div class="row" style="gap:8px;flex-wrap:nowrap"><button class="iconbtn bell" aria-label="Notifications" data-act="${role==="admin"?"atab":"otab"}" data-t="${role==="admin"?"approvals":"reviews"}">${IC.bell}</button><span class="avatar">${who}</span></div></div>`}
+function hoursOpts(r){const opts=[[null,"Closed"],[[6,18],"06:00 – 18:00"],[[8,17],"08:00 – 17:00"],[[8,19],"08:00 – 19:00"],[[9,16],"09:00 – 16:00"],[[10,22],"10:00 – 22:00"]];
+  const cur=JSON.stringify(r);if(!opts.some(o=>JSON.stringify(o[0])===cur))opts.push([r,span(r)]);
+  return opts.map(o=>`<option value='${JSON.stringify(o[0])}' ${JSON.stringify(o[0])===cur?"selected":""}>${o[1]}</option>`).join("")}
+
+/* ---------------- admin ---------------- */
+function adminView(){
+  const pend=D.biz.filter(b=>b.status==="pending"),reps=D.reports.filter(r=>!r.done),pr=D.promos.filter(p=>p.status==="requested");
+  const nav=[["approvals","Approvals",IC.check,pend.length],["businesses","All businesses",IC.store],["reports","Reports",IC.flag,reps.length],["promos","Featured & promotions",IC.mega,pr.length],["setup","Categories & areas",IC.grid],["activity","Activity",IC.pulse]];
+  let m="";
+  if(A.tab==="approvals"){
+    m=`<h2>New businesses waiting</h2><p>Nothing appears in the app until it is approved here. Check the verification details, then approve, verify or reject.</p>
+    <div class="queue">${pend.map(b=>{const d=b.docs,v=(ok,l)=>`<div><span class="${ok?"ok":"no"}">${ok?"✓":"✕"}</span>${l}</div>`;
+      return `<div class="qcard ${b.risk?"risk":""}"><div style="min-width:0"><div class="row" style="justify-content:space-between"><div class="namecell">${d.photos?photo(b,"sm"):`<span class="ph sm" style="background:var(--surface-2)"></span>`}<h3 style="font-size:20px">${esc(b.name)}</h3></div><span class="muted" style="font-size:13px">Submitted ${esc(b.submitted||"just now")}</span></div>
+        <div class="meta" style="font-size:14px"><span>${esc(b.area)}, ${esc(b.township)}</span><span>${b.cats.map(c=>cat(c)?.label).join(" · ")}</span><span class="mono">${esc(b.phone)}</span></div>
+        <p style="margin:8px 0">${esc(b.tagline)}</p><div class="pills">${b.menu.slice(0,3).map(x=>`<span class="pill">${esc(x.n)} · ${R(x.p)}</span>`).join("")}</div>
+        ${b.risk?`<div class="note"><b>Risk flags:</b> ${esc(b.risk)}</div>`:""}</div>
+        <div><div class="lbl" style="margin-bottom:6px">Verification</div><div class="vlist">${v(d.reg,"CIPC registration")}${v(d.id,"Owner ID")}${v(d.phone,"Phone confirmed by SMS")}${v(d.pin,"Location pin")}${v(d.photos,"Photos")}</div>
+        <div class="row" style="margin-top:14px"><button class="btn brand sm" data-act="approve" data-id="${b.id}">Approve</button><button class="btn ghost sm" data-act="approve" data-id="${b.id}" data-v="1">Approve + verify</button><button class="btn bad sm" data-act="reject" data-id="${b.id}">Reject</button></div></div></div>`}).join("")||'<div class="panel empty"><b>Queue is clear</b>New registrations from business owners land here.</div>'}</div>`;
+  }
+  if(A.tab==="businesses"){
+    const q=(A.q||"").toLowerCase().trim(),rows=D.biz.filter(b=>!q||(b.name+" "+b.area+" "+b.township).toLowerCase().includes(q));
+    m=`<h2>All businesses</h2><p>${q?`${rows.length} of ${D.biz.length} listings match “${esc(A.q)}”.`:`${D.biz.length} listings across ${Object.keys(D.townships).length} townships.`}</p>
+    <div class="tablewrap"><table><thead><tr><th>Business</th><th>Area</th><th>Status</th><th>Verified</th><th>Featured</th><th>Rating</th><th></th></tr></thead><tbody>
+    ${rows.length?"":`<tr><td colspan="7" class="muted">No businesses match. Try a name or a township.</td></tr>`}
+    ${rows.map(b=>`<tr><td><div class="namecell">${photo(b,"sm")}<b>${esc(b.name)}</b></div></td><td>${esc(b.area)}, ${esc(b.township)}</td><td><span class="status s-${b.status}">${b.status[0].toUpperCase()+b.status.slice(1)}</span></td>
+      <td>${b.verified?'<span class="ok">✓</span>':`<button class="btn ghost sm" data-act="verify" data-id="${b.id}" ${b.status!=="live"?"disabled":""}>Verify</button>`}</td>
+      <td>${b.featured?(b.featured==="week"?"Business of the Week":"Featured"):"–"}</td><td class="mono">${rating(b).n?rating(b).avg.toFixed(1):"–"}</td>
+      <td>${b.status==="live"?`<button class="btn ghost sm" data-act="suspend" data-id="${b.id}">Suspend</button>`:b.status==="suspended"?`<button class="btn ghost sm" data-act="reinstate" data-id="${b.id}">Reinstate</button>`:""}</td></tr>`).join("")}
+    </tbody></table></div>`;
+  }
+  if(A.tab==="reports"){
+    m=`<h2>Reports</h2><p>Reports from customers and owners about businesses and reviews.</p><div class="queue">${reps.map(r=>{const b=biz(r.biz);return `<div class="panel"><div class="row" style="justify-content:space-between"><span class="status ${r.kind==="review"?"s-pending":"s-suspended"}">${r.kind==="review"?"Review":"Business"}</span><span class="muted" style="font-size:13px">${esc(r.from)} · ${esc(r.when)}</span></div>
+      <h3 style="margin:10px 0 4px">${esc(b.name)}</h3><p style="margin:0 0 4px">${esc(r.text)}</p><p class="muted" style="margin:0 0 12px;font-size:14px">Reason: ${esc(r.reason)}</p>
+      <div class="row">${r.kind==="review"?`<button class="btn bad sm" data-act="rmReview" data-rep="${r.id}">Remove review</button>`:`<button class="btn bad sm" data-act="suspendRep" data-rep="${r.id}">Suspend business</button><button class="btn ghost sm" data-act="warn" data-rep="${r.id}">Ask owner to fix</button>`}<button class="btn ghost sm" data-act="dismiss" data-rep="${r.id}">Dismiss</button></div></div>`}).join("")||'<div class="panel empty"><b>No open reports</b>Customer and owner reports land here.</div>'}</div>`;
+  }
+  if(A.tab==="promos"){
+    m=`<h2>Featured & promotions</h2><p>Businesses pay for visibility, never for being listed.</p>
+    <div class="queue">${pr.map(p=>`<div class="panel row" style="justify-content:space-between"><div><b>${esc(biz(p.biz).name)}</b> requested <b>${esc(p.plan)}</b></div><div class="row"><button class="btn brand sm" data-act="promoOk" data-p="${p.id}">Activate</button><button class="btn ghost sm" data-act="promoNo" data-p="${p.id}">Decline</button></div></div>`).join("")}</div>
+    <h3 style="margin:22px 0 10px">Running now</h3><div class="tablewrap"><table><thead><tr><th>Business</th><th>Placement</th><th>Until</th></tr></thead><tbody>${D.promos.filter(p=>p.status==="active").map(p=>`<tr><td>${esc(biz(p.biz).name)}</td><td>${esc(p.plan)}</td><td>${esc(p.until)}</td></tr>`).join("")}</tbody></table></div>`;
+  }
+  if(A.tab==="setup"){
+    m=`<h2>Categories & areas</h2><p>What customers can browse. New categories show up on the app home screen immediately.</p>
+    <div class="grid2"><div class="panel"><h3>Categories</h3><div class="taglist" style="margin-bottom:14px">${D.cats.map(c=>`<span class="chip">${c.e} ${esc(c.label)}</span>`).join("")}</div>
+      <form data-form="addcat" class="row"><input id="newcat" type="text" placeholder="e.g. Butchery" style="flex:1;min-width:140px"><button class="btn sm">Add</button></form></div>
+    <div class="panel"><h3>Townships & areas</h3>${Object.entries(D.townships).map(([t,as])=>`<div style="margin-bottom:10px"><b>${esc(t)}</b><div class="muted" style="font-size:13.5px">${as.map(esc).join(" · ")}</div></div>`).join("")}
+      <form data-form="addarea" class="row" style="margin-top:12px"><select id="na-t" style="flex:1;min-width:120px">${Object.keys(D.townships).map(t=>`<option>${esc(t)}</option>`).join("")}</select><input id="na-a" type="text" placeholder="New area" style="flex:1;min-width:120px"><button class="btn sm">Add</button></form></div></div>`;
+  }
+  if(A.tab==="activity"){
+    const lv=live().length;
+    m=`<h2>Platform activity</h2><p>Sample totals for this week, plus searches made in this demo.</p>
+    <div class="stats"><div class="stat"><small>Live businesses</small><b>${lv}</b></div><div class="stat"><small>Searches</small><b>2,184</b> <em>+12%</em></div><div class="stat"><small>Contact taps</small><b>963</b></div><div class="stat"><small>Pending approval</small><b>${pend.length}</b></div></div>
+    <div class="grid2"><div class="panel"><h3>Latest searches</h3><table><tbody>${D.searches.slice(-8).reverse().map(s=>`<tr><td>${esc(s)}</td></tr>`).join("")}</tbody></table></div>
+    <div class="panel"><h3>Listings per township</h3><table><tbody>${Object.keys(D.townships).map(t=>`<tr><td>${esc(t)}</td><td class="mono" style="text-align:right">${live().filter(b=>b.township===t).length}</td></tr>`).join("")}</tbody></table></div></div>`;
+  }
+  return dbar("Admin console",nav.find(n=>n[0]===A.tab)[1],"AD")+`<div class="dash"><nav class="side" aria-label="Admin sections"><div class="who"><span class="muted" style="font-size:12px">Platform admin</span><b>Moderation desk</b></div>${sideNav(nav,A.tab,"atab")}</nav><section class="main">${m}</section></div>`;
+}
+
+/* ---------------- render + events ---------------- */
+function render(){
+  document.querySelectorAll(".seg button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.role===role));
+  const root=$("#root");
+  if(role==="customer"){root.innerHTML=custView();renderPhone(true)}
+  if(role==="owner")root.innerHTML=ownerView();
+  if(role==="admin")root.innerHTML=adminView();
+}
+function setRole(r){role=r;render();window.scrollTo({top:0})}
+function doSearch(q){
+  if(!q.trim())return;
+  D.searches.push(q.toLowerCase());
+  const p=parseQuery(q);p.q=q;go({s:"results",p});
+}
+
+document.addEventListener("click",e=>{
+  const el=e.target.closest("[data-act]");if(!el)return;
+  const a=el.dataset.act,id=el.dataset.id;
+  if(el.tagName==="SELECT")return;
+  switch(a){
+    case "role": if(el.dataset.otab)O.tab=el.dataset.otab; if(el.dataset.atab)A.tab=el.dataset.atab; setRole(el.dataset.role); break;
+    case "back": back(); break;
+    case "tab": if(role!=="customer"){role="customer";render()} C.stack=[{s:el.dataset.t}];C.sheet=null;renderPhone(true); if(el.dataset.t==="search")$("#q")?.focus({preventScroll:true}); break;
+    case "save": {const n=+id; if(C.saved.has(n)){C.saved.delete(n);toast("Removed from saved places")}else{C.saved.add(n);toast("Saved. Find it under the Saved tab.")} renderPhone(); break;}
+    case "signout": C.user=null; renderPhone(true); toast("Signed out"); break;
+    case "go": C.picking=null; go({s:el.dataset.s}); break;
+    case "try": if(role!=="customer")setRole("customer"); C.stack=[{s:"home"}]; doSearch(el.dataset.q); break;
+    case "cat": go({s:"results",p:{cats:[el.dataset.c],township:C.township,area:C.area,text:""}}); break;
+    case "open": if(role!=="customer"){role="customer";render()} if(cur().s!=="profile"||cur().id!=id) go({s:"profile",id:+id}); break;
+    case "pickT": C.picking=el.dataset.t; renderPhone(); break;
+    case "pickA": C.township=el.dataset.t;C.area=el.dataset.a;C.picking=null;home();toast(`Showing places around ${C.area}, ${C.township}`); break;
+    case "gps": C.township="Soweto";C.area="Orlando";home();toast("Location found: Orlando, Soweto (simulated in the demo)"); break;
+    case "filt": C.filters[el.dataset.f]=!C.filters[el.dataset.f]; renderPhone(); break;
+    case "ptab": C.ptab=el.dataset.t; renderPhone(); break;
+    case "star": C.draftStars=+el.dataset.v; const t=$("#revtext")?.value; renderPhone(); if(t&&$("#revtext"))$("#revtext").value=t; break;
+    case "sheet": C.sheet={k:el.dataset.k,id:+id}; $("#sheetHost").innerHTML=sheetHtml(); break;
+    case "close": C.sheet=null; $("#sheetHost").innerHTML=""; break;
+    case "copy": navigator.clipboard?.writeText(el.dataset.v).then(()=>toast("Number copied"),()=>toast("Select the number to copy it")); break;
+    case "flag": D.reports.push({id:Date.now(),kind:"review",biz:+id,ridx:+el.dataset.r,text:`“${biz(id).reviews[+el.dataset.r].text}”`,reason:"Flagged as fake or abusive",from:role==="owner"?"Business owner":"Customer",when:"Just now"}); toast("Review reported to the admin team","Open admin","goAdminReports"); break;
+    case "goAdminReports": A.tab="reports"; setRole("admin"); break;
+    case "goAdminApprovals": A.tab="approvals"; setRole("admin"); break;
+    case "otab": O.tab=el.dataset.t; render(); break;
+    case "atab": A.tab=el.dataset.t; render(); break;
+    case "viewInApp": role="customer"; render(); go({s:"profile",id:OWNER_ID}); break;
+    case "addItem": saveMenuInputs(); biz(OWNER_ID).menu.push({n:"New item",p:0}); render(); break;
+    case "delItem": saveMenuInputs(); biz(OWNER_ID).menu.splice(+el.dataset.i,1); render(); break;
+    case "promo": D.promos.push({id:Date.now(),biz:OWNER_ID,plan:el.dataset.p,status:"requested"}); render(); toast("Request sent. The team will confirm and invoice you.","See as admin","goAdminPromos"); break;
+    case "goAdminPromos": A.tab="promos"; setRole("admin"); break;
+    case "approve": {const b=biz(id);b.status="live";if(el.dataset.v)b.verified=true;render();toast(`${b.name} is live in the app`,"See it","openLast");lastOpen=b.id;break;}
+    case "openLast": role="customer";render();go({s:"profile",id:lastOpen}); break;
+    case "reject": {const b=biz(id);b.status="rejected";render();toast(`${b.name} rejected. The owner is told why by SMS.`);break;}
+    case "verify": biz(id).verified=true; render(); toast("Verified badge added"); break;
+    case "suspend": biz(id).status="suspended"; render(); toast(`${biz(id).name} hidden from the app`); break;
+    case "reinstate": biz(id).status="live"; render(); toast(`${biz(id).name} is live again`); break;
+    case "rmReview": {const r=D.reports.find(x=>x.id==el.dataset.rep);const b=biz(r.biz);if(r.ridx!=null&&b.reviews[r.ridx]){b.reviews.splice(r.ridx,1);if(r.ridx<b.baseReviews)b.baseReviews--}r.done=true;render();toast("Review removed");break;}
+    case "suspendRep": {const r=D.reports.find(x=>x.id==el.dataset.rep);biz(r.biz).status="suspended";r.done=true;render();toast(`${biz(r.biz).name} suspended`);break;}
+    case "warn": {const r=D.reports.find(x=>x.id==el.dataset.rep);r.done=true;render();toast("Owner asked to update their listing");break;}
+    case "dismiss": D.reports.find(x=>x.id==el.dataset.rep).done=true; render(); toast("Report dismissed"); break;
+    case "promoOk": {const p=D.promos.find(x=>x.id==el.dataset.p);p.status="active";p.until="21 Nov";const b=biz(p.biz);if(!b.featured)b.featured="featured";render();toast(`${b.name} is now featured`);break;}
+    case "promoNo": D.promos.find(x=>x.id==el.dataset.p).status="declined"; render(); break;
+  }
+});
+let lastOpen=1;
+document.addEventListener("input",e=>{
+  if(e.target.id!=="dsearch")return;
+  A.q=e.target.value;A.tab="businesses";const pos=e.target.selectionStart;render();const i=$("#dsearch");if(i){i.focus();i.setSelectionRange(pos,pos)}
+});
+document.addEventListener("change",e=>{
+  if(e.target.id==="upl"&&e.target.files[0]){const fr=new FileReader(),lab=e.target.closest("label");fr.onload=()=>{const b=biz(OWNER_ID);(b.uploads=b.uploads||[]).push(fr.result);const im=document.createElement("img");im.className="ph thumb";im.style.objectFit="cover";im.src=fr.result;im.alt="Uploaded photo";lab.before(im);toast("Photo added. Save changes to publish it.")};fr.readAsDataURL(e.target.files[0]);return}
+  if(e.target.id==="r-t"){O.reg=e.target.value;const keep=snapshotReg();render();restoreReg(keep)}
+});
+function snapshotReg(){const o={};document.querySelectorAll('[data-form="register"] input').forEach(i=>o[i.id||i.value]=i.type==="checkbox"?i.checked:i.value);return o}
+function restoreReg(o){document.querySelectorAll('[data-form="register"] input').forEach(i=>{const k=i.id||i.value;if(k in o){if(i.type==="checkbox")i.checked=o[k];else i.value=o[k]}})}
+function saveMenuInputs(){const b=biz(OWNER_ID);b.menu.forEach((x,i)=>{const n=$("#mn"+i),p=$("#mp"+i);if(n)x.n=n.value;if(p)x.p=+p.value||0})}
+
+document.addEventListener("submit",e=>{
+  e.preventDefault();const f=e.target,k=f.dataset.form;
+  if(k==="search") doSearch(f.q.value);
+  if(k==="signup"){C.user={name:$("#su-name").value.trim()||"Customer",phone:$("#su-phone").value};renderPhone(true);toast("Welcome! Your account is ready.")}
+  if(k==="report"){const r=f.querySelector("input:checked").value;D.reports.push({id:Date.now(),kind:"business",biz:+f.dataset.id,text:"Reported from the customer app.",reason:r,from:"Customer",when:"Just now"});C.sheet=null;$("#sheetHost").innerHTML="";toast("Thanks. An admin will look at this.","Open admin","goAdminReports")}
+  if(k==="review"){const b=biz(f.dataset.id),t=f.t.value.trim();if(!C.draftStars){toast("Tap the stars to rate first");return}b.reviews.push({who:C.user?C.user.name:"You",stars:C.draftStars,text:t||"(no comment)",date:"Today"});C.draftStars=0;renderPhone();toast("Review posted")}
+  if(k==="profile"){const b=biz(OWNER_ID);b.name=$("#p-name").value.trim()||b.name;b.tagline=$("#p-tag").value;b.phone=$("#p-phone").value;b.wa=$("#p-wa").value.replace(/\D/g,"");
+    const cs=[...f.querySelectorAll('input[name=pc]:checked')].map(i=>i.value);if(cs.length)b.cats=cs;
+    b.hours.wk=JSON.parse($("#p-wk").value);b.hours.sat=b.hours.wk;b.hours.sun=JSON.parse($("#p-sun").value);b.delivery=$("#p-del").checked;b.delAreas=$("#p-areas").value.split(",").map(s=>s.trim()).filter(Boolean);
+    b.also=[...f.querySelectorAll('input[name=pa]:checked')].map(i=>i.value);b.social.fb=$("#p-fb").value;b.social.ig=$("#p-ig").value;render();toast("Saved. Your profile is updated in the app.","View in app","viewInApp")}
+  if(k==="menu"){saveMenuInputs();render();toast("Menu saved. Customers see the new prices now.","View in app","viewInApp")}
+  if(k==="reply"){const b=biz(OWNER_ID),i=+f.dataset.i,v=$("#rep"+i).value.trim();if(!v)return;b.reviews[i].reply=v;render();toast("Reply posted on your profile")}
+  if(k==="register"){const id=++D.nextId,cats=[...f.querySelectorAll('input[name=rc]:checked')].map(i=>i.value);
+    D.biz.push(B({id,name:$("#r-name").value.trim()||"New business",township:$("#r-t").value,area:$("#r-a").value,cats:cats.length?cats:["street"],hue:(id*47)%360,tagline:$("#r-tag").value,phone:$("#r-phone").value,wa:"27"+$("#r-phone").value.replace(/\D/g,"").slice(1),
+      hours:W([10,20],[9,21],[10,18]),status:"pending",verified:false,submitted:"Just now",delivery:$("#r-del").checked,docs:{reg:$("#v-reg").checked,id:$("#v-id").checked,phone:true,pin:$("#v-pin").checked,photos:$("#v-ph").checked},
+      menu:[{n:"Braai plate & pap",p:85},{n:"Full house kota",p:50}],rating:0,n:0,baseReviews:0}));
+    O.tab="overview";render();toast("Submitted. An admin reviews it before it shows in the app.","Open admin","goAdminApprovals")}
+  if(k==="addcat"){const v=$("#newcat").value.trim();if(!v)return;D.cats.push({id:"c"+Date.now(),label:v,e:"🏷",kw:[v.toLowerCase()]});render();toast(`“${v}” added to the app home screen`)}
+  if(k==="addarea"){const t=$("#na-t").value,v=$("#na-a").value.trim();if(!v)return;D.townships[t].push(v);render();toast(`${v} added to ${t}`)}
+});
+
+render();
+</script>
+</body>
+</html>
